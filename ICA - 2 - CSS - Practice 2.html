@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Dashboard - CSS Practice Activity</title> 
+    <style>
+        /* Body: Arial font, #f5f5f5 background, 20px margin */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 20px;
+        }
+        
+        /* h1: #2c3e50 color, center aligned */
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        /* h2: #3498db color, 2px solid #3498db bottom border */
+        h2 {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        /* .highlight: yellow background, 5px padding */
+        .highlight {
+            background-color: yellow;
+            padding: 5px;
+        }
+        
+        /* .important: red and bold text */
+        .important {
+            color: red;
+            font-weight: bold;
+        }
+        
+        /* #main-content: white background, 20px padding (plus existing styles) */
+        #main-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* Report links: unvisited black, hover red */
+        #main-content ul a:link {
+            color: black;
+        }
+        
+        #main-content ul a:hover {
+            color: red;
+        }
+        
+        /* .nav-link: 10px 20px padding, 5px margin, #3498db background, white text */
+        .nav-link {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        /* .nav-link hover: red background */
+        .nav-link:hover {
+            background-color: red;
+        }
+        
+        /* footer: center aligned, 30px top margin, 20px padding, #7f8c8d text color */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1>Sales Dashboard</h1>
+    
+    <nav style="text-align: center; margin-bottom: 20px;">
+        <a href="#" class="nav-link">Overview</a>
+        <a href="#" class="nav-link">Analytics</a>
+        <a href="#" class="nav-link">Reports</a>
+        <a href="#" class="nav-link">Settings</a>
+    </nav>
+    
+    <div id="main-content">
+        
+        <h2>Monthly Overview</h2>
+        <p>
+            Total revenue this month: <span class="highlight">$45,230</span>. 
+            This represents a 12% increase compared to last month's performance.
+        </p>
+        
+        <h2>Key Metrics</h2>
+        <p>
+            Monitor your <span class="important">conversion rate</span>, 
+            <span class="important">customer retention</span>, and <span class="important">average order value</span> 
+            to track business growth and identify opportunities for improvement.
+        </p>
+        
+        <h2>Recent Activity</h2>
+        <p>
+            Quick links to your most used reports:
+        </p>
+        <ul>
+            <li><a href="#">Weekly Sales Summary</a></li>
+            <li><a href="#">Customer Acquisition Report</a></li>
+            <li><a href="#">Inventory Status</a></li>
+        </ul>
+    </div>
+    <footer >
+        <p>DS 4023/5023 | Dashboard CSS Practice</p>
+    </footer>
+</body>
+</html>

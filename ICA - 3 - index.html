@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Sales Dashboard - JS Activity</title>
+    <link rel="stylesheet" href="ICA - 3 - styles.css">
+    <script type="text/javascript" src="ICA - 3 - solution.js" defer></script>
+
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+              
+                <span class="logo-text">DataViz</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-section="overview">
+         
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-section="sales">
+    
+                    <span>Sales</span>
+                </a>
+                <a href="#" class="nav-item" data-section="customers">
+                    <span>Customers</span>
+                </a>
+                <a href="#" class="nav-item" data-section="reports">
+                  
+                    <span>Reports</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>DS 4023/5023</p>
+                <p>JavaScript Activity</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <h1>Sales Dashboard</h1>
+                    <p id="current-date">Loading date...</p>
+                </div>
+                
+            </header>
+
+           
+
+            <!-- Stats Cards Section -->
+            <section class="stats-section">
+                <div class="stat-card" id="card-sales">
+                    <div class="stat-content">
+                        <h3>Total Sales</h3>
+                        <p class="stat-value" id="total-sales">$0</p>
+
+                    </div>
+                </div>
+                <div class="stat-card" id="card-orders">
+                    <div class="stat-content">
+                        <h3>Total Orders</h3>
+                        <p class="stat-value" id="total-orders">0</p>
+ 
+                    </div>
+                </div>
+                <div class="stat-card" id="card-customers">
+                    <div class="stat-content">
+                        <h3>Customers</h3>
+                        <p class="stat-value" id="total-customers">0</p>
+
+                    </div>
+                </div>
+                <div class="stat-card" id="card-avg">
+                    <div class="stat-content">
+                        <h3>Avg. Order Value</h3>
+                        <p class="stat-value" id="avg-order">$0</p>
+             
+                    </div>
+                </div>
+            </section>
+
+            <!-- Two Column Layout -->
+            <div class="two-column-layout">
+                <!-- Left Column: Controls & Quick Actions -->
+                <section class="panel quick-actions-panel">
+                    <h2>Quick Actions</h2>
+                    <div class="button-grid">
+                        <button id="btn-refresh" class="action-btn primary">
+                            <span class="btn-icon">🔄</span>
+                            Refresh Data
+                        </button>
+                        <button id="btn-toggle-table" class="action-btn secondary">
+                            <span class="btn-icon">👁️</span>
+                            Toggle Table
+                        </button>
+                        <button id="btn-highlight" class="action-btn warning">
+                            <span class="btn-icon">⭐</span>
+                            Highlight High
+                        </button>
+                        <button id="btn-reset" class="action-btn danger">
+                            <span class="btn-icon">🗑️</span>
+                            Reset All
+                        </button>
+                    </div>
+                    
+                    <!-- Filter Controls -->
+                    <div class="filter-section">
+                        <h3>Filter Transactions</h3>
+                        <div class="filter-group">
+                            <label for="filter-status">Status:</label>
+                            <select id="filter-status">
+                                <option value="all">All</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-min">Min Amount: $</label>
+                            <input type="number" id="filter-min" placeholder="0" min="0">
+                        </div>
+                        <button id="btn-apply-filter" class="action-btn secondary full-width">
+                            Apply Filters
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Right Column: Add Transaction Form -->
+                <section class="panel form-panel">
+                    <h2>Add New Transaction</h2>
+                    <div class="form-container" id="transaction-form">
+                        <div class="form-group">
+                            <label for="input-date">Date:</label>
+                            <input type="date" id="input-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-product">Product:</label>
+                            <input type="text" id="input-product" placeholder="Enter product name">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-amount">Amount ($):</label>
+                            <input type="number" id="input-amount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-status">Status:</label>
+                            <select id="input-status">
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button id="btn-submit-transaction" class="action-btn success">
+                                Add Transaction
+                            </button>
+                            <button id="btn-clear-form" class="action-btn secondary">
+                                Clear Form
+                            </button>
+                        </div>
+                        <p id="form-message" class="form-message hidden"></p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Data Table Section -->
+            <section class="panel table-panel" id="data-table-section">
+                <div class="table-header">
+                    <h2>Recent Transactions</h2>
+                    <div class="table-info">
+                        <span id="row-count">Showing 0 transactions</span>
+                        <span id="table-total">Total: $0</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="sales-table">
+                   
+                            <tr>
+                                <th data-sort="date">Date ↕</th>
+                                <th data-sort="product">Product ↕</th>
+                                <th data-sort="amount">Amount ↕</th>
+                                <th data-sort="status">Status ↕</th>
+                                <th>Actions</th>
+                            </tr>
+                            <tr class="table-row" data-amount="150" data-status="completed">
+                                <td>2026-01-15</td>
+                                <td>Widget A</td>
+                                <td class="amount">$150.00</td>
+                                <td><span class="status completed">Completed</span></td>
+                                <td><button class="btn-delete" data-id="1">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="89" data-status="pending">
+                                <td>2026-01-16</td>
+                                <td>Widget B</td>
+                                <td class="amount">$89.00</td>
+                                <td><span class="status pending">Pending</span></td>
+                                <td><button class="btn-delete" data-id="2">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="245" data-status="completed">
+                                <td>2026-01-17</td>
+                                <td>Gadget Pro</td>
+                                <td class="amount">$245.00</td>
+                                <td><span class="status completed">Completed</span></td>
+                                <td><button class="btn-delete" data-id="3">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="67" data-status="completed">
+                                <td>2026-01-18</td>
+                                <td>Widget C</td>
+                                <td class="amount">$67.00</td>
+                                <td><span class="status completed">Completed</span></td>
+                                <td><button class="btn-delete" data-id="4">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="312" data-status="pending">
+                                <td>2026-01-19</td>
+                                <td>Gadget Elite</td>
+                                <td class="amount">$312.00</td>
+                                <td><span class="status pending">Pending</span></td>
+                                <td><button class="btn-delete" data-id="5">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="178" data-status="completed">
+                                <td>2026-01-19</td>
+                                <td>Super Widget</td>
+                                <td class="amount">$178.00</td>
+                                <td><span class="status completed">Completed</span></td>
+                                <td><button class="btn-delete" data-id="6">🗑️</button></td>
+                            </tr>
+                            <tr class="table-row" data-amount="55" data-status="cancelled">
+                                <td>2026-01-20</td>
+                                <td>Basic Item</td>
+                                <td class="amount">$55.00</td>
+                                <td><span class="status cancelled">Cancelled</span></td>
+                                <td><button class="btn-delete" data-id="7">🗑️</button></td>
+                            </tr>
+                
+                    </table>
+                </div>
+            </section>
+
+            <!-- Statistics Summary -->
+            <section class="panel stats-summary-panel">
+                <h2>Sales Statistics</h2>
+                <div class="stats-grid">
+                    <div class="mini-stat">
+                        <span class="mini-label">Highest Sale</span>
+                        <span class="mini-value" id="stat-highest">$0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Lowest Sale</span>
+                        <span class="mini-value" id="stat-lowest">$0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Average Sale</span>
+                        <span class="mini-value" id="stat-average">$0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Completed</span>
+                        <span class="mini-value" id="stat-completed">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Pending</span>
+                        <span class="mini-value" id="stat-pending">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Cancelled</span>
+                        <span class="mini-value" id="stat-cancelled">0</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="dashboard-footer">
+                <p>DS 4023/5023 - Interactive Applications</p>
+                <p id="last-updated">Last updated: Never</p>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>

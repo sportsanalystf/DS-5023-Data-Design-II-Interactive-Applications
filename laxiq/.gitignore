@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.streamlit/
+.DS_Store
+*.egg-info/
+dist/
+build/
+.env
+SKILL.md

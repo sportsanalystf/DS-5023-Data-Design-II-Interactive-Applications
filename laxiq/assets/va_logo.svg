@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 180" width="200" height="180">
+  <!-- Crossed Sabres -->
+  <g stroke="#232D4B" stroke-width="4" fill="none" stroke-linecap="round">
+    <!-- Left sabre -->
+    <path d="M 25,105 C 60,95 100,80 175,60" />
+    <circle cx="22" cy="107" r="5" fill="#232D4B" />
+    <!-- Right sabre -->  
+    <path d="M 175,105 C 140,95 100,80 25,60" />
+    <circle cx="178" cy="107" r="5" fill="#232D4B" />
+  </g>
+  <!-- V shape -->
+  <polygon points="55,15 100,140 145,15 125,15 100,115 75,15" fill="#E57200" />
+  <polygon points="68,20 100,125 132,20 120,20 100,105 80,20" fill="white" />
+</svg>

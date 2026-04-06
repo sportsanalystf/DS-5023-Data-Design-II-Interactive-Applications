@@ -52,9 +52,54 @@ CSS = """
 /* Light background */
 .stApp { background: #F1F1EF; }
 section[data-testid="stSidebar"] { background: #232D4B; }
+
+/* Hide Streamlit's auto-generated page navigation in the sidebar */
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] { display: none !important; }
+section[data-testid="stSidebar"] nav { display: none !important; }
+section[data-testid="stSidebar"] ul[data-testid="stSidebarNavItems"] { display: none !important; }
 section[data-testid="stSidebar"] * { color: white !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
 section[data-testid="stSidebar"] .stRadio label { color: rgba(255,255,255,0.7) !important; font-size: 0.8rem; }
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] {
+    background: rgba(255,255,255,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    border-radius: 8px !important;
+}
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div > div,
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] span,
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] [data-testid="stMarkdownContainer"],
+section[data-testid="stSidebar"] .stSelectbox div[role="combobox"],
+section[data-testid="stSidebar"] .stSelectbox div[role="combobox"] * {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    -webkit-text-fill-color: white !important;
+}
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] svg {
+    fill: white !important;
+}
+/* Make dropdown menu items readable (dark text on white bg) */
+section[data-testid="stSidebar"] [data-baseweb="popover"] li,
+section[data-testid="stSidebar"] [data-baseweb="popover"] li * {
+    color: #232D4B !important;
+    -webkit-text-fill-color: #232D4B !important;
+    font-weight: 500 !important;
+}
+
+/* Ensure main content text is dark on light background */
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+    color: #232D4B !important;
+}
+.stApp .stMarkdown p, .stApp .stMarkdown li {
+    color: #333 !important;
+}
+.stApp .stTabs [data-baseweb="tab-list"] button {
+    color: #232D4B !important;
+}
+.stApp .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+    color: #E57200 !important;
+}
 
 /* Metric card */
 .metric-card {

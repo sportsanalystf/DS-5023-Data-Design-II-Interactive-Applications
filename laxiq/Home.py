@@ -85,8 +85,26 @@ st.markdown(f"""
 
 # ── Sidebar ──
 with st.sidebar:
+    # Virginia Athletics logo
+    import os, base64
+    _logo_dir = os.path.dirname(__file__)
+    _logo_path = os.path.join(_logo_dir, "assets", "va_logo.png")
+    if os.path.exists(_logo_path):
+        with open(_logo_path, "rb") as _f:
+            _b64 = base64.b64encode(_f.read()).decode()
+        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="display:block;text-align:center;margin-bottom:8px;">
+            <img src="data:image/png;base64,{_b64}" style="max-width:180px;margin:0 auto;" />
+        </a>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="text-decoration:none;">
+            <div style="background:linear-gradient(135deg, {UVA_ORANGE} 0%, #c75b00 100%);
+                border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:8px;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;
+                    color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
+            </div>
+        </a>""", unsafe_allow_html=True)
     st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
-    st.caption("Cavaliers Lacrosse Analytics")
+    st.caption("Cavaliers Analytics Dashboard")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")
@@ -420,6 +438,30 @@ for game in SEASON_SCHEDULE:
         badge_bg = UVA_ORANGE
         result_text = game["note"]
 
+    # Pre-match the game data for clickable rows
+    matched = None
+    if has_data:
+        opp_lower = opp.lower().strip()
+        for ag in available_games:
+            if opp_lower in ag["away_team"].lower() or ag["away_team"].lower() in opp_lower:
+                matched = ag
+                break
+            if opp_lower in ag.get("label", "").lower():
+                matched = ag
+                break
+
+    # Build matchup display string
+    matchup_parts = []
+    if uva_rank:
+        matchup_parts.append(uva_rank)
+    matchup_parts.append(f"V {ha_str}")
+    if rank_str:
+        matchup_parts.append(rank_str)
+    matchup_parts.append(opp)
+    if conf_str:
+        matchup_parts.append(conf_str.strip())
+    matchup_label = " ".join(matchup_parts)
+
     # Use st.columns for each game row
     c_date, c_matchup, c_loc, c_result = st.columns([1.2, 4, 2.5, 1.5])
 
@@ -432,16 +474,25 @@ for game in SEASON_SCHEDULE:
         )
 
     with c_matchup:
-        matchup_parts = []
-        if uva_rank:
-            matchup_parts.append(f":gray[{uva_rank}]")
-        matchup_parts.append(f"**V** {ha_str}")
-        if rank_str:
-            matchup_parts.append(f":orange[{rank_str}]")
-        matchup_parts.append(f"**{opp}**")
-        if conf_str:
-            matchup_parts.append(f":gray[{conf_str}]")
-        st.markdown(" ".join(matchup_parts))
+        if matched:
+            # Make the entire matchup a clickable button
+            if st.button(f"📊 {matchup_label}", key=f"nav_{game['date']}",
+                         use_container_width=False, type="tertiary"):
+                st.session_state["selected_game"] = matched
+                st.session_state["selected_sheets"] = load_game(matched["file"])
+                st.switch_page("pages/1_Game_Analysis.py")
+        else:
+            # Non-clickable — just display as text
+            md_parts = []
+            if uva_rank:
+                md_parts.append(f":gray[{uva_rank}]")
+            md_parts.append(f"**V** {ha_str}")
+            if rank_str:
+                md_parts.append(f":orange[{rank_str}]")
+            md_parts.append(f"**{opp}**")
+            if conf_str:
+                md_parts.append(f":gray[{conf_str}]")
+            st.markdown(" ".join(md_parts))
 
     with c_loc:
         st.caption(f"{game['location']}")
@@ -450,27 +501,6 @@ for game in SEASON_SCHEDULE:
 
     with c_result:
         st.markdown(result_text)
-
-    # Clickable button to go to game analysis
-    if has_data:
-        opp_lower = opp.lower().strip()
-        matched = None
-        for ag in available_games:
-            if opp_lower in ag["away_team"].lower() or ag["away_team"].lower() in opp_lower:
-                matched = ag
-                break
-            if opp_lower in ag.get("label", "").lower():
-                matched = ag
-                break
-
-        if matched:
-            bc1, bc2, bc3 = st.columns([1.2, 4, 4])
-            with bc2:
-                if st.button(f"📊 Game Analysis  →", key=f"btn_{game['date']}",
-                             use_container_width=True, type="tertiary"):
-                    st.session_state["selected_game"] = matched
-                    st.session_state["selected_sheets"] = load_game(matched["file"])
-                    st.switch_page("pages/1_Game_Analysis.py")
 
     st.markdown("---")
 

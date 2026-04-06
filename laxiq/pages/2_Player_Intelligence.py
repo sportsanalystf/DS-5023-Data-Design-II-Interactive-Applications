@@ -255,8 +255,24 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {{
 
 # ── Sidebar ──
 with st.sidebar:
+    import os as _os, base64 as _b64mod
+    _logo_path = _os.path.join(_os.path.dirname(__file__), "..", "assets", "va_logo.png")
+    if _os.path.exists(_logo_path):
+        with open(_logo_path, "rb") as _f:
+            _b64 = _b64mod.b64encode(_f.read()).decode()
+        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="display:block;text-align:center;margin-bottom:8px;">
+            <img src="data:image/png;base64,{_b64}" style="max-width:180px;margin:0 auto;" />
+        </a>""", unsafe_allow_html=True)
+    else:
+        st.markdown("""<a href="https://virginiasports.com" target="_blank" style="text-decoration:none;">
+            <div style="background:linear-gradient(135deg, #E57200 0%, #c75b00 100%);
+                border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:8px;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;
+                    color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
+            </div>
+        </a>""", unsafe_allow_html=True)
     st.markdown('<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
-    st.caption("Cavaliers Lacrosse Analytics")
+    st.caption("Cavaliers Analytics Dashboard")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")

@@ -103,8 +103,8 @@ with st.sidebar:
                     color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
             </div>
         </a>""", unsafe_allow_html=True)
-    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
-    st.caption("Cavaliers Analytics Dashboard")
+    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
+    st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")
@@ -298,7 +298,7 @@ NATIONAL_RANKS = {
 
 n_games = len(played_games)
 st.markdown(f"""<div class="hero-banner">
-    <h1>⚔️ Virginia Cavaliers — Player Intelligence</h1>
+    <h1>⚔️ Lax-IQ · Virginia Cavaliers Lacrosse Analytics App</h1>
     <div class="sub">Women's Lacrosse · 2026 Season ({n_games} Games) · Record: {wins}-{losses} · Advanced Analytics Dashboard</div>
     <div class="record-badge">{wins}-{losses} ({conf_wins}-{conf_losses} ACC)</div>
 </div>""", unsafe_allow_html=True)

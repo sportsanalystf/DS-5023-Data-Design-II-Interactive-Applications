@@ -51,18 +51,18 @@ CSS = """
 
 /* Light background */
 .stApp { background: #F1F1EF; }
-section[data-testid="stSidebar"] { background: #232D4B; }
+section[data-testid="stSidebar"] { background: #FFFFFF; border-right: 1px solid #DADADA; }
 
 /* Hide Streamlit's auto-generated page navigation in the sidebar */
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] { display: none !important; }
 section[data-testid="stSidebar"] nav { display: none !important; }
 section[data-testid="stSidebar"] ul[data-testid="stSidebarNavItems"] { display: none !important; }
-section[data-testid="stSidebar"] * { color: white !important; }
+section[data-testid="stSidebar"] * { color: #232D4B !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
-section[data-testid="stSidebar"] .stRadio label { color: rgba(255,255,255,0.7) !important; font-size: 0.8rem; }
+section[data-testid="stSidebar"] .stRadio label { color: #666666 !important; font-size: 0.8rem; }
 section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] {
-    background: rgba(255,255,255,0.15) !important;
-    border: 1px solid rgba(255,255,255,0.4) !important;
+    background: #F1F1EF !important;
+    border: 1px solid #DADADA !important;
     border-radius: 8px !important;
 }
 section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
@@ -71,13 +71,13 @@ section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] span,
 section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] [data-testid="stMarkdownContainer"],
 section[data-testid="stSidebar"] .stSelectbox div[role="combobox"],
 section[data-testid="stSidebar"] .stSelectbox div[role="combobox"] * {
-    color: white !important;
+    color: #232D4B !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
-    -webkit-text-fill-color: white !important;
+    -webkit-text-fill-color: #232D4B !important;
 }
 section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] svg {
-    fill: white !important;
+    fill: #232D4B !important;
 }
 /* Make dropdown menu items readable (dark text on white bg) */
 section[data-testid="stSidebar"] [data-baseweb="popover"] li,

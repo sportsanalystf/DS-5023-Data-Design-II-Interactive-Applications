@@ -37,8 +37,8 @@ with st.sidebar:
                     color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
             </div>
         </a>""", unsafe_allow_html=True)
-    st.markdown('<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
-    st.caption("Cavaliers Analytics Dashboard")
+    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
+    st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")

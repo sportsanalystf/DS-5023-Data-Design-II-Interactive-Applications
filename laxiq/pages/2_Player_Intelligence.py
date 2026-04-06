@@ -59,17 +59,22 @@ h1, h2, h3 {{
 }}
 
 section[data-testid="stSidebar"] {{
-    background: {UVA_BLUE} !important;
+    background: #FFFFFF !important;
+    border-right: 1px solid #DADADA;
 }}
 section[data-testid="stSidebar"] * {{
-    color: white !important;
+    color: {UVA_BLUE} !important;
 }}
 section[data-testid="stSidebar"] .stMarkdown p,
 section[data-testid="stSidebar"] .stMarkdown li,
 section[data-testid="stSidebar"] .stMarkdown h3,
 section[data-testid="stSidebar"] .stMarkdown h4 {{
-    color: white !important;
+    color: {UVA_BLUE} !important;
 }}
+/* Hide Streamlit auto-generated page navigation */
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {{ display: none !important; }}
+section[data-testid="stSidebar"] nav {{ display: none !important; }}
+section[data-testid="stSidebar"] ul[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 
 .main-header {{
     background: linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 50%, {UVA_ORANGE} 100%);
@@ -271,8 +276,8 @@ with st.sidebar:
                     color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
             </div>
         </a>""", unsafe_allow_html=True)
-    st.markdown('<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
-    st.caption("Cavaliers Analytics Dashboard")
+    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
+    st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")

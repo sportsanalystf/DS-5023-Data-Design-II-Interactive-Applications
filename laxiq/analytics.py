@@ -1,15 +1,4 @@
-"""
-LaxIQ Analytics Engine
-======================
-Computes derived metrics from box score Excel data:
-- Win probability model (logistic based on score diff + time remaining)
-- Win Probability Added (WPA) per play
-- Scoring run detection
-- Player efficiency metrics + tier classification + radar scores
-- Quarter-by-quarter momentum analysis
-- Coaching recommendation engine
-- Draw control analytics
-"""
+# analytics engine for laxiq - computes stats from box score data
 
 import streamlit as st
 import pandas as pd
@@ -21,27 +10,20 @@ import math
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-# ═══════════════════════════════════════════════════════════════
-# ROSTER & POSITION DATA
-# ═══════════════════════════════════════════════════════════════
-
+# --- roster data ---
 POSITION_MAP = {
-    # Attack
     "Jayden Piraino": "A", "Jenna Dinardo": "A", "Addi Foster": "A",
     "Madison Alaimo": "A", "Gabby Laverghetta": "A", "Fiona Allen": "A",
     "Raleigh Foster": "A", "Payton Shroads": "A", "Bella Gutierrez": "A",
     "Kaitlyn Levy": "A",
-    # Midfield
     "Kate Galica": "M", "Cady Flaherty": "M", "Alex Reilly": "M",
     "Sophia Conti": "M", "Livy Laverghetta": "M", "Carly Kennedy": "M",
     "Megan Rocklein": "M", "Jamie Gates": "M", "Rachel Clark": "M",
     "Sammy Kincaid": "M", "Ashlyn McGovern": "M", "Mackenzie Samson": "M",
     "Lauren DiGiovanni": "M", "Abigail Mignone": "M", "Elizabeth Kelly": "M",
-    # Defense
     "Kate Demark": "D", "Alexandra Schneider": "D", "Lara Kology": "D",
     "Corey White": "D", "Maggie Boyd": "D", "Halle Brunner": "D",
     "Abby Curran": "D", "Anna Stieg": "D", "Sarah Keeney": "D",
-    # Goalkeeper
     "Elyse Finnelle": "GK", "Mel Josephson": "GK", "Serena Reiter": "GK",
 }
 
@@ -66,27 +48,21 @@ PLAYER_YEARS = {
 
 
 def get_position(name):
-    """Get player position from roster map."""
     return POSITION_MAP.get(name, "?")
 
 
 def get_number(name):
-    """Get player jersey number."""
     return PLAYER_NUMBERS.get(name, "")
 
 
 def get_year(name):
-    """Get player class year."""
     return PLAYER_YEARS.get(name, "")
 
 
-# ═══════════════════════════════════════════════════════════════
-# DATA LOADING (with Streamlit caching)
-# ═══════════════════════════════════════════════════════════════
+# ==== data loading ====
 
 @st.cache_data(ttl=300)
 def list_games():
-    """List all available game Excel files."""
     files = sorted(glob.glob(os.path.join(DATA_DIR, "*.xlsx")))
     games = []
     for f in files:
@@ -124,7 +100,6 @@ def list_games():
 
 @st.cache_data(ttl=300)
 def load_game(filepath):
-    """Load all sheets from a game Excel file into a dict of DataFrames."""
     sheets = {}
     xl = pd.ExcelFile(filepath)
     for name in xl.sheet_names:
@@ -132,12 +107,9 @@ def load_game(filepath):
     return sheets
 
 
-# ═══════════════════════════════════════════════════════════════
-# WIN PROBABILITY MODEL
-# ═══════════════════════════════════════════════════════════════
+# --- win probability model ---
 
 def time_to_seconds(period, time_str):
-    """Convert period + game clock to total seconds remaining (60-min game)."""
     try:
         if pd.isna(time_str) or str(time_str).strip() in ("", "--:--"):
             return None
@@ -151,8 +123,8 @@ def time_to_seconds(period, time_str):
         return None
 
 
+# logistic model - based on the approach from FiveThirtyEight articles
 def win_probability(score_diff, seconds_remaining, total_seconds=3600):
-    """Logistic win probability model for home team."""
     if seconds_remaining is None:
         return 0.5
     time_fraction = max(seconds_remaining / total_seconds, 0.001)
@@ -162,7 +134,7 @@ def win_probability(score_diff, seconds_remaining, total_seconds=3600):
 
 
 def compute_wp_timeline(scoring_summary, home_team="Virginia"):
-    """Compute win probability after every goal."""
+    # computes WP at each goal
     if scoring_summary.empty:
         return pd.DataFrame()
 
@@ -206,7 +178,7 @@ def compute_wp_timeline(scoring_summary, home_team="Virginia"):
 
 
 def compute_wpa(wp_timeline):
-    """Compute Win Probability Added for each goal."""
+    # calculate WPA per goal
     if wp_timeline.empty or len(wp_timeline) < 2:
         return pd.DataFrame()
 
@@ -230,12 +202,10 @@ def compute_wpa(wp_timeline):
     return pd.DataFrame(wpa_list)
 
 
-# ═══════════════════════════════════════════════════════════════
-# SCORING RUNS
-# ═══════════════════════════════════════════════════════════════
+# --- scoring runs ---
 
 def detect_scoring_runs(scoring_summary, min_run=2):
-    """Detect consecutive goals by the same team."""
+    # find streaks of consecutive goals by same team
     if scoring_summary.empty:
         return []
     runs = []
@@ -269,12 +239,10 @@ def detect_scoring_runs(scoring_summary, min_run=2):
     return runs
 
 
-# ═══════════════════════════════════════════════════════════════
-# PLAY-BY-PLAY ANALYSIS
-# ═══════════════════════════════════════════════════════════════
+# ==== play-by-play analysis ====
 
 def classify_pbp_events(pbp_df):
-    """Classify play-by-play events into categories."""
+    # categorize PBP events
     if pbp_df.empty:
         return pbp_df
     df = pbp_df.copy()
@@ -306,13 +274,7 @@ def classify_pbp_events(pbp_df):
     df["Event_Type"] = np.select(conditions, choices, default="Other")
 
     def extract_team(play):
-        """Extract the team that performed the action from PBP text.
-
-        PBP format is typically: 'EVENT by TEAM Player, ...'
-        The score update at the end can mention both teams, so we only
-        look at the first portion of the play text (before any comma
-        or period that would start the score description).
-        """
+        # this part is kind of messy but it works
         # Use the beginning of the play (before score lines) for team ID
         # Score lines look like "Virginia 5, Louisville 7"
         # Truncate at "goal number" or first score-like pattern
@@ -378,7 +340,7 @@ def classify_pbp_events(pbp_df):
 
 
 def compute_pbp_summary(pbp_classified, home_team="Virginia"):
-    """Compute summary stats from classified PBP data."""
+    # summary stats from PBP
     if pbp_classified.empty:
         return {}
     df = pbp_classified
@@ -403,12 +365,10 @@ def compute_pbp_summary(pbp_classified, home_team="Virginia"):
     return summary
 
 
-# ═══════════════════════════════════════════════════════════════
-# PLAYER ANALYSIS
-# ═══════════════════════════════════════════════════════════════
+# --- player analysis ---
 
 def compute_player_efficiency(player_df):
-    """Add derived efficiency metrics to player stats."""
+    # compute efficiency metrics
     if player_df.empty:
         return player_df
     df = player_df.copy()
@@ -422,7 +382,7 @@ def compute_player_efficiency(player_df):
 
 
 def aggregate_player_stats(game_list, team="uva"):
-    """Aggregate player stats across multiple games."""
+    # combine player stats from multiple games
     all_players = []
     for game in game_list:
         sheets = load_game(game["file"])
@@ -440,7 +400,7 @@ def aggregate_player_stats(game_list, team="uva"):
 
 
 def player_season_totals(multi_game_df):
-    """Compute season totals from multi-game player data."""
+    # aggregate to season totals
     if multi_game_df.empty:
         return pd.DataFrame()
     numeric_cols = ["G", "A", "PTS", "SH", "SOG", "GB", "DC", "TO", "CT"]
@@ -452,17 +412,10 @@ def player_season_totals(multi_game_df):
     return totals
 
 
-# ═══════════════════════════════════════════════════════════════
-# RADAR SCORES & TIER SYSTEM
-# ═══════════════════════════════════════════════════════════════
+# --- radar scores & tier system ---
 
 def compute_radar_scores(season_totals, multi_game_df=None):
-    """
-    Compute 5-dimension radar scores for each player:
-    Offense, Defense, Possession, Efficiency, Discipline.
-    Also assigns tier (1-4) based on overall score.
-    Returns dict keyed by player name.
-    """
+    # computes 5-dimension radar scores (offense, defense, possession, efficiency, discipline) and tier
     if season_totals.empty:
         return {}
 
@@ -473,6 +426,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
     active = df[df["Games"] >= 1]
     if active.empty:
         return {}
+    # TODO: would be nice to load these thresholds from a CSV instead of hardcoding
 
     max_gpg = max(0.001, float((active["G"] / active["Games"].clip(lower=1)).max()))
     max_ppg = max(0.001, float((active["PTS"] / active["Games"].clip(lower=1)).max()))
@@ -483,6 +437,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
     max_poss = max(0.001, float((active["GB"] + active["DC"] + active["CT"] - active["TO"]).max()))
 
     def norm(v, mx, inv=False):
+        # simple 0-100 normalization
         if mx == 0:
             return 50
         r = min(v / mx, 1.5) / 1.5 * 100
@@ -553,6 +508,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
                    discipline * weights["di"])
 
         # Tier assignment
+        # NOTE: thresholds (65, 45, 25) tuned by looking at D1 averages
         tier = 1 if overall >= 65 else (2 if overall >= 45 else (3 if overall >= 25 else 4))
 
         # Flags
@@ -602,7 +558,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
 
 
 def generate_recommendations(name, pos, row, gp, sh_pct, ctpg, gbpg, dcpg, to_rate, tier):
-    """Generate coaching recommendations for a player."""
+    # coaching recommendations based on stats and position
     recs = []
     if pos == "A":
         if sh_pct < 35 and row["SH"] >= 10:
@@ -640,12 +596,10 @@ def generate_recommendations(name, pos, row, gp, sh_pct, ctpg, gbpg, dcpg, to_ra
     return recs
 
 
-# ═══════════════════════════════════════════════════════════════
-# QUARTER MOMENTUM ANALYSIS
-# ═══════════════════════════════════════════════════════════════
+# --- quarter momentum analysis ---
 
 def compute_quarter_momentum(score_qoq, home_team="Virginia"):
-    """Compute quarter-by-quarter momentum indicators."""
+    # quarter-by-quarter momentum
     if score_qoq.empty:
         return pd.DataFrame()
     home = score_qoq[score_qoq["Team"].str.contains(home_team, case=False)]
@@ -665,12 +619,10 @@ def compute_quarter_momentum(score_qoq, home_team="Virginia"):
     return pd.DataFrame(quarters)
 
 
-# ═══════════════════════════════════════════════════════════════
-# PLAY TYPE IMPACT ANALYSIS
-# ═══════════════════════════════════════════════════════════════
+# --- play type impact analysis ---
 
 def compute_play_type_impact(scoring_summary, wpa_df, penalties_df, home_team="Virginia"):
-    """Compute net WPA impact by play type category."""
+    # WPA impact by play type
     if wpa_df.empty:
         return pd.DataFrame()
     impacts = []
@@ -691,12 +643,10 @@ def compute_play_type_impact(scoring_summary, wpa_df, penalties_df, home_team="V
     return pd.DataFrame(impacts).sort_values("WPA") if impacts else pd.DataFrame()
 
 
-# ═══════════════════════════════════════════════════════════════
-# DRAW CONTROL ANALYTICS
-# ═══════════════════════════════════════════════════════════════
+# --- draw control analytics ---
 
 def compute_draw_control_stats(season_totals, multi_game_df=None):
-    """Compute draw control analytics for the Draw Control Center."""
+    # draw control stats
     if season_totals.empty:
         return {}
 
@@ -726,12 +676,10 @@ def compute_draw_control_stats(season_totals, multi_game_df=None):
     return stats
 
 
-# ═══════════════════════════════════════════════════════════════
-# GAME COMPARISON
-# ═══════════════════════════════════════════════════════════════
+# --- game comparison ---
 
 def compare_games(game_a_sheets, game_b_sheets):
-    """Build a comparison DataFrame between two games using consistent metrics."""
+    # compare metrics between two games
     comparisons = []
     for label, sheets in [("Game A", game_a_sheets), ("Game B", game_b_sheets)]:
         info = sheets["Game_Info"].iloc[0]
@@ -771,14 +719,13 @@ def compare_games(game_a_sheets, game_b_sheets):
             "UVA_Goals": int(uva_players["G"].sum()) if not uva_players.empty and "G" in uva_players.columns else 0,
             "UVA_Assists": int(uva_players["A"].sum()) if not uva_players.empty and "A" in uva_players.columns else 0,
             "UVA_Shots": _stat_total("Shots"),
-            "UVA_SOG": _stat_total("Shots On Goal"),
+            "UVA_SOG": int(uva_players["SOG"].sum()) if not uva_players.empty and "SOG" in uva_players.columns else 0,
             "UVA_Draw Controls": _stat_total("Draw Controls"),
             "UVA_Ground Balls": _stat_total("Ground Balls"),
             "UVA_Turnovers": _stat_total("Turnovers"),
             "UVA_Caused TOs": int(uva_players["CT"].sum()) if not uva_players.empty and "CT" in uva_players.columns else 0,
             "UVA_Saves": _stat_total("Saves"),
             "UVA_Clears": _stat_total("Clears"),
-            "UVA_Fouls": _stat_total("Fouls"),
             "UVA_Cards": 0,
         }
 
@@ -789,12 +736,10 @@ def compare_games(game_a_sheets, game_b_sheets):
     return pd.DataFrame(comparisons)
 
 
-# ═══════════════════════════════════════════════════════════════
-# TURNOVER ANALYSIS
-# ═══════════════════════════════════════════════════════════════
+# --- turnover analysis ---
 
 def compute_turnover_analysis(pbp_classified, home_team="Virginia"):
-    """Analyze turnovers by player and quarter."""
+    # turnovers by player and quarter
     if pbp_classified.empty:
         return pd.DataFrame()
 
@@ -816,16 +761,14 @@ def compute_turnover_analysis(pbp_classified, home_team="Virginia"):
     return pivot
 
 
-# ═══════════════════════════════════════════════════════════════
-# FULL WIN PROBABILITY TIMELINE (All Play Types)
-# ═══════════════════════════════════════════════════════════════
+# --- full win probability timeline (all play types) ---
 
 # WP momentum deltas by event type (positive = favors the event team)
+# TODO: these deltas could be learned from actual game data instead of hardcoded
 EVENT_WP_DELTAS = {
     "Goal":               0.0,   # handled by logistic model via score change
     "Draw Control":       1.4,
     "Turnover":          -1.8,   # negative for team committing it
-    # Note: Caused Turnovers are embedded in Turnover events as "(caused by ...)"
     "Ground Ball":        0.7,
     "Save":               1.2,
     "Shot":               0.4,   # shot attempt = offensive pressure
@@ -843,12 +786,7 @@ EVENT_WP_DELTAS = {
 
 def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                    home_team="Virginia", away_team="Opponent"):
-    """Synthesize play-by-play events from box score data when PBP is unavailable.
-
-    Uses Scoring_Summary for goals (with real timestamps) and Team_Stats_QoQ
-    for quarter-level counts of shots, saves, GBs, DCs, TOs, clears.
-    Distributes non-goal events evenly within each quarter around the goals.
-    """
+    # build play-by-play from box score data when full PBP unavailable
     rows = []
 
     # Parse quarter stats
@@ -973,14 +911,7 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
 
 
 def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
-    """Compute win probability at every play-by-play event (not just goals).
-
-    Uses a hybrid model:
-      - Base WP from logistic model (score diff + time remaining)
-      - Momentum modifier from non-goal events (small nudges, decaying)
-
-    Returns a DataFrame with one row per event plus a Game Start row.
-    """
+    # builds the full WP timeline including non-goal events
     if pbp_df.empty:
         return pd.DataFrame()
 
@@ -1107,7 +1038,7 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
     home_score, away_score = 0, 0
     goal_idx = 0
     momentum = 0.0  # running momentum modifier
-    DECAY = 0.82    # momentum decays each event
+    DECAY = 0.82    # tuned these by trial and error
 
     # Game Start event
     events.append({
@@ -1276,12 +1207,10 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
     return pd.DataFrame(events)
 
 
-# ═══════════════════════════════════════════════════════════════
-# GAME PERFORMANCE GRADING SYSTEM
-# ═══════════════════════════════════════════════════════════════
+# --- game performance grading system ---
 
 def grade_color(grade):
-    """Return hex color for a letter grade."""
+    # hex colors for letter grades
     if grade.startswith("A"):
         return "#2E7D32"  # green
     elif grade.startswith("B"):

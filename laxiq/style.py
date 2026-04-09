@@ -1,36 +1,29 @@
-"""
-LaxIQ Design System — UVA Light Theme
-======================================
-Official UVA brand colors from brand.virginia.edu/design-assets/colors
-"""
+# style constants and helpers for laxiq
 
-# ═══════════════════════════════════════════════════════════════
-# UVA BRAND COLORS (official)
-# ═══════════════════════════════════════════════════════════════
+# --- colors ---
+# colors from https://brand.virginia.edu
 
-UVA_BLUE     = "#232D4B"
-UVA_BLUE_25  = "#C8CBD2"
-UVA_ORANGE   = "#E57200"
-UVA_ORANGE_25= "#F9DCBF"
-CYAN         = "#009FDF"
-YELLOW       = "#FDDA24"
-TEAL         = "#25CAD3"
-GREEN        = "#62BB46"
-MAGENTA      = "#EF3F6B"
+UVA_BLUE = "#232D4B"
+UVA_BLUE_25 = "#C8CBD2"
+UVA_ORANGE = "#E57200"
+UVA_ORANGE_25 = "#F9DCBF"
+CYAN = "#009FDF"
+YELLOW = "#FDDA24"
+TEAL = "#25CAD3"
+GREEN = "#62BB46"
+MAGENTA = "#EF3F6B"
 
-# Semantic colors
-POSITIVE     = "#2E7D32"   # Dark green for "good"
-NEGATIVE     = "#C62828"   # Dark red for "bad"
+# semantic colors
+POSITIVE = "#2E7D32"
+NEGATIVE = "#C62828"
 NEUTRAL_GRAY = "#666666"
-LIGHT_BG     = "#F1F1EF"
-WHITE        = "#FFFFFF"
-BORDER       = "#DADADA"
-TEXT_PRIMARY  = UVA_BLUE
-TEXT_MUTED   = "#666666"
+LIGHT_BG = "#F1F1EF"
+WHITE = "#FFFFFF"
+BORDER = "#DADADA"
+TEXT_PRIMARY = UVA_BLUE
+TEXT_MUTED = "#666666"
 
-# ═══════════════════════════════════════════════════════════════
-# PLOTLY CHART THEME (light)
-# ═══════════════════════════════════════════════════════════════
+# --- plotly theme ---
 
 PLOT_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
@@ -41,13 +34,12 @@ PLOT_LAYOUT = dict(
     yaxis=dict(gridcolor="#ECECEC", zerolinecolor=BORDER, linecolor=BORDER),
 )
 
-# ═══════════════════════════════════════════════════════════════
-# STREAMLIT THEME CSS
-# ═══════════════════════════════════════════════════════════════
+# --- css ---
+# most of this CSS is for overriding streamlit defaults
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Bebas+Neue&display=swap');
 
 /* Light background */
 .stApp { background: #F1F1EF; }
@@ -224,11 +216,10 @@ section[data-testid="stSidebar"] [data-baseweb="popover"] li * {
 """
 
 
-# ═══════════════════════════════════════════════════════════════
-# HELPER FUNCTIONS
-# ═══════════════════════════════════════════════════════════════
+# --- html helpers ---
 
 def metric_card(value, label, color_class=""):
+    # generates the metric card html
     vc = f' {color_class}' if color_class else ''
     return f'<div class="metric-card"><div class="metric-value{vc}">{value}</div><div class="metric-label">{label}</div></div>'
 
@@ -257,13 +248,14 @@ def game_header(home_team, away_team, home_score, away_score, result, date, loca
 
 
 def insight_box(text, variant=""):
+    # generates insight box html with optional variant
     cls = f"insight-box {variant}" if variant else "insight-box"
     return f'<div class="{cls}">{text}</div>'
 
 
 def game_header_v2(home_team, away_team, home_score, away_score, result, date,
                     location="", home_record="", away_record="", quarter_scores=None):
-    """Enhanced game header matching design mockup with quarter pills and records."""
+    # enhanced game header with quarter pills and records
     badge_bg = "#2E7D32" if result == "W" else "#C62828"
     badge_text = "WIN" if result == "W" else "LOSS"
     loser_cls = ' loser' if result == "W" else ''
@@ -301,10 +293,7 @@ def game_header_v2(home_team, away_team, home_score, away_score, result, date,
 
 
 def grade_strip(grades):
-    """Render the 6-category letter grade strip below the game header.
-
-    grades: dict like {"Offense": "A-", "Defense": "B", ...}
-    """
+    # probably could simplify this but it works
     from analytics import grade_color
     categories = ["Offense", "Defense", "Transition", "Draw Unit", "Goalkeeping", "Discipline"]
     cards = []
@@ -319,6 +308,7 @@ def grade_strip(grades):
 
 
 def moment_card(title, description, wpa=None, variant=""):
+    # creates a moment card with optional wpa indicator
     cls = f"moment-card {variant}"
     wpa_html = ""
     if wpa is not None:

@@ -1,4 +1,4 @@
-"""LaxIQ — Home: Season Overview Dashboard"""
+# home page - season overview dashboard
 
 import streamlit as st
 from analytics import list_games, load_game
@@ -110,9 +110,8 @@ with st.sidebar:
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")
     st.page_link("pages/2_Player_Intelligence.py", label="⚔️ Player Intelligence")
 
-# ═══════════════════════════════════════════════════════════════
-# FULL SEASON SCHEDULE DATA
-# ═══════════════════════════════════════════════════════════════
+# --- schedule data ---
+# hardcoded the full schedule since it doesn't change - scores updated after each game
 
 SEASON_SCHEDULE = [
     {"date": "JAN 23", "day": "FRI", "opponent": "Johns Hopkins", "rank": "", "conf": "EXH", "ha": "vs", "location": "Severn, MD", "loc_type": "Neutral", "result": None, "uva_score": None, "opp_score": None, "note": "Exhibition", "uva_rank": ""},
@@ -141,9 +140,7 @@ SEASON_SCHEDULE = [
     {"date": "MAY 22-24", "day": "FRI-SUN", "opponent": "NCAA Final Four", "rank": "", "conf": "NCAA", "ha": "", "location": "Chicago, Ill.", "loc_type": "", "result": None, "uva_score": None, "opp_score": None, "note": "TBA", "uva_rank": ""},
 ]
 
-# ═══════════════════════════════════════════════════════════════
-# COMPUTE SEASON STATS
-# ═══════════════════════════════════════════════════════════════
+# --- season stats ---
 
 played_games = [g for g in SEASON_SCHEDULE if g["result"] is not None]
 upcoming_games = [g for g in SEASON_SCHEDULE if g["result"] is None and g["note"] != "Exhibition"]
@@ -169,15 +166,13 @@ for g in reversed(played_games):
     else:
         break
 
-# ═══════════════════════════════════════════════════════════════
-# COMPUTE ADVANCED STATS FROM GAME DATA
-# ═══════════════════════════════════════════════════════════════
+# --- advanced stats ---
+# pulls stats from all the game excel files and aggregates them
 
 available_games = list_games()
 
 @st.cache_data(ttl=600)
 def compute_season_advanced_stats():
-    """Compute advanced season-level stats from all game data files."""
     games_data = list_games()
     n = len(games_data)
     if n == 0:
@@ -280,7 +275,10 @@ def compute_season_advanced_stats():
 
 adv = compute_season_advanced_stats()
 
-# National percentile rankings (external source — cannot be computed from box scores)
+# --- national rankings ---
+# these are from laxnumbers.com - have to update manually
+# TODO: automate pulling national rankings
+
 NATIONAL_RANKS = {
     "offensive_efficiency": ("28.6%", "87th"),
     "defensive_efficiency": ("30.3%", "54th"),
@@ -292,9 +290,7 @@ NATIONAL_RANKS = {
     "strength_of_record":   ("-2.83", "55th"),
 }
 
-# ═══════════════════════════════════════════════════════════════
-# HERO BANNER
-# ═══════════════════════════════════════════════════════════════
+# --- hero banner ---
 
 n_games = len(played_games)
 st.markdown(f"""<div class="hero-banner">
@@ -303,9 +299,7 @@ st.markdown(f"""<div class="hero-banner">
     <div class="record-badge">{wins}-{losses} ({conf_wins}-{conf_losses} ACC)</div>
 </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-# KPI ROW
-# ═══════════════════════════════════════════════════════════════
+# --- kpi cards ---
 
 # Use two rows of 4 for better responsiveness on smaller screens
 kpi_data = [
@@ -322,9 +316,7 @@ cols = st.columns(len(kpi_data))
 for col, (val, label, cls) in zip(cols, kpi_data):
     col.markdown(metric_card(val, label, cls), unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-# ADVANCED TEAM METRICS — 2 × 4 GRID  (using st.columns)
-# ═══════════════════════════════════════════════════════════════
+# --- advanced metrics grid ---
 
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;letter-spacing:1px;color:{UVA_ORANGE};margin:1.2rem 0 0.5rem 0;">Virginia ({wins} – {losses})</p>', unsafe_allow_html=True)
 
@@ -351,15 +343,13 @@ for row_metrics in [adv_metrics_row1, adv_metrics_row2]:
 <span class="amc-value">{val}</span>
 </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════
-# TEAM RANKINGS TABLE (using st.columns for layout)
-# ═══════════════════════════════════════════════════════════════
+# --- rankings table ---
 
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;letter-spacing:1px;color:{UVA_BLUE};margin:1.5rem 0 0.3rem 0;">Team Rankings</p>', unsafe_allow_html=True)
 
 
+# helper to build the ranking table rows
 def render_rank_rows(items):
-    """Render a list of (label, value, rank) as styled rows."""
     html = ""
     for label, value, rank in items:
         html += f'<div class="rank-row"><span class="rl">{label}</span><span><span class="rv">{value}</span><span class="rr">{rank}</span></span></div>'
@@ -409,9 +399,7 @@ pc4.markdown(render_rank_rows([("Ride Rate", f"{adv.get('ride_rate', 13.0)}%", "
 st.markdown('<p style="text-align:center;font-size:0.75rem;color:#999;margin-top:6px;font-style:italic;">If there are terms or concepts that are unfamiliar, a fuller explanation may be available in the glossary.</p>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════
-# FULL SCHEDULE & RESULTS
-# ═══════════════════════════════════════════════════════════════
+# --- full schedule and results ---
 
 st.markdown('<div class="section-label">Full Schedule & Results</div>', unsafe_allow_html=True)
 
@@ -505,9 +493,7 @@ for game in SEASON_SCHEDULE:
     st.markdown("---")
 
 
-# ═══════════════════════════════════════════════════════════════
-# NEXT GAME BANNER
-# ═══════════════════════════════════════════════════════════════
+# --- next game banner ---
 
 next_game = next((g for g in SEASON_SCHEDULE if g["result"] is None and g["note"] not in ("Exhibition", "TBA")), None)
 if next_game:

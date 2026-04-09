@@ -999,24 +999,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-with st.expander("⚙️ Filters & Settings"):
-    f1, f2, f3 = st.columns(3)
-    with f1:
-        pos_filter = st.multiselect("Position", ["A", "M", "D", "GK"], default=["A", "M", "D", "GK"])
-    with f2:
-        tier_filter = st.multiselect("Tier", [1, 2, 3, 4], default=[1, 2, 3, 4],
-            format_func=lambda x: {1:"Tier 1: Driver", 2:"Tier 2: Amplifier", 3:"Tier 3: Specialist", 4:"Tier 4: Dev"}[x])
-    with f3:
-        min_gp = st.slider("Min Games Played", 1, 5, 1)
-
-with st.expander("📐 Formula Reference"):
-    st.markdown("""
-    **Pts/Shot** = PTS / SH
-    **TO Rate** = TO / (SH+TO+DC+GB)
-    **Poss Impact** = GB+DC+CT−TO
-    **Consistency** = 1 − CV(pts/game)
-    **Clutch** = Avg G(wins) / Avg G(losses)
-    """)
+f1, f2, f3 = st.columns(3)
+with f1:
+    pos_filter = st.multiselect("Position", ["A", "M", "D", "GK"], default=["A", "M", "D", "GK"])
+with f2:
+    tier_filter = st.multiselect("Tier", [1, 2, 3, 4], default=[1, 2, 3, 4],
+        format_func=lambda x: {1:"Tier 1: Driver", 2:"Tier 2: Amplifier", 3:"Tier 3: Specialist", 4:"Tier 4: Dev"}[x])
+with f3:
+    min_gp = st.slider("Min Games Played", 1, 5, 1)
 
 filtered = {k: v for k, v in all_data.items()
             if v["player"]["pos"] in pos_filter
@@ -1032,7 +1022,7 @@ with tab1:
 
     tier_counts = {1: 0, 2: 0, 3: 0, 4: 0}
     tier_players = {1: [], 2: [], 3: [], 4: []}
-    for name, data in all_data.items():
+    for name, data in filtered.items():
         t = data["tier_num"]
         tier_counts[t] += 1
         tier_players[t].append(name)
@@ -1045,19 +1035,21 @@ with tab1:
             st.markdown(f"<div style='text-align:center;padding:1.2rem;background:{WHITE};border-radius:14px;border:2px solid {color};box-shadow:0 2px 8px rgba(0,0,0,0.05);'>"
                        f"<div style='font-family:Bebas Neue;font-size:2.5rem;color:{text_col};'>{tier_counts[t]}</div>"
                        f"<div style='font-size:0.72rem;color:{TEXT_GRAY};text-transform:uppercase;letter-spacing:1px;font-weight:600;'>{label}</div>"
-                       f"<div style='font-size:0.8rem;color:{UVA_BLUE};margin-top:8px;'>{'<br>'.join(tier_players[t][:5])}</div>"
+                       f"<div style='font-size:0.8rem;color:{UVA_BLUE};margin-top:8px;'>{'<br>'.join(tier_players[t])}</div>"
                        f"</div>", unsafe_allow_html=True)
 
     st.markdown("")
-    st.markdown("### Usage vs Efficiency Matrix")
-    ue_fig = make_usage_efficiency_chart(all_data)
-    if ue_fig:
-        st.plotly_chart(ue_fig, use_container_width=True)
-
-    st.markdown("### Cumulative Scoring Progression")
-    cum_fig = make_cumulative_points_chart(all_data)
-    if cum_fig:
-        st.plotly_chart(cum_fig, use_container_width=True)
+    chart_col1, chart_col2 = st.columns(2)
+    with chart_col1:
+        st.markdown("### Usage vs Efficiency")
+        ue_fig = make_usage_efficiency_chart(filtered)
+        if ue_fig:
+            st.plotly_chart(ue_fig, use_container_width=True)
+    with chart_col2:
+        st.markdown("### Cumulative Scoring")
+        cum_fig = make_cumulative_points_chart(filtered)
+        if cum_fig:
+            st.plotly_chart(cum_fig, use_container_width=True)
 
     st.markdown("### Roster Metrics Heatmap")
     heatmap_data = []
@@ -1070,24 +1062,77 @@ with tab1:
             heatmap_data.append([s["overall"], s["offensive"], s["defensive"],
                                s["possession"], s["efficiency"], s["discipline"]])
     if heatmap_data:
-        fig = go.Figure(go.Heatmap(
-            z=heatmap_data,
-            x=["Overall", "Offense", "Defense", "Possession", "Efficiency", "Discipline"],
-            y=heatmap_names,
-            colorscale=[[0, "#FCE4EC"], [0.35, "#FFF8E1"], [0.6, "#E8F5E9"], [1, UVA_GREEN]],
-            text=[[f"{v:.0f}" for v in row] for row in heatmap_data],
-            texttemplate="%{text}", textfont=dict(size=11, color=UVA_BLUE),
-            showscale=False,
-        ))
-        fig.update_layout(**PLOTLY_LAYOUT, height=max(400, len(heatmap_names)*35+80),
-            yaxis=dict(autorange="reversed", tickfont=dict(size=10)),
-            xaxis=dict(side="top", tickfont=dict(size=11)))
-        st.plotly_chart(fig, use_container_width=True)
+        # Normalize each column independently for per-column conditional formatting
+        import numpy as _np
+        hm_arr = _np.array(heatmap_data)
+        hm_normalized = _np.zeros_like(hm_arr, dtype=float)
+        for col_idx in range(hm_arr.shape[1]):
+            col_vals = hm_arr[:, col_idx]
+            col_min, col_max = col_vals.min(), col_vals.max()
+            if col_max > col_min:
+                hm_normalized[:, col_idx] = (col_vals - col_min) / (col_max - col_min)
+            else:
+                hm_normalized[:, col_idx] = 0.5
+
+        # Build cell colors per column using the normalized values
+        def _hm_color(norm_val):
+            """Map 0-1 normalized value to pink → yellow → green."""
+            if norm_val < 0.35:
+                return "#FCE4EC"   # pink (low)
+            elif norm_val < 0.6:
+                return "#FFF8E1"   # yellow (mid)
+            elif norm_val < 0.8:
+                return "#E8F5E9"   # light green
+            else:
+                return "#C8E6C9"   # green (high)
+
+        col_headers = ["Overall", "Offense", "Defense", "Possession", "Efficiency", "Discipline"]
+        n_rows = len(heatmap_names)
+        n_cols = len(col_headers)
+
+        # Build HTML table for per-column conditional formatting
+        table_html = f"<table style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;'>"
+        table_html += "<thead><tr>"
+        table_html += f"<th style='text-align:right;padding:8px 12px;font-size:0.8rem;color:{TEXT_GRAY};font-weight:600;'></th>"
+        for h in col_headers:
+            table_html += f"<th style='text-align:center;padding:8px 12px;font-size:0.8rem;color:{TEXT_GRAY};font-weight:600;'>{h}</th>"
+        table_html += "</tr></thead><tbody>"
+        for i in range(n_rows):
+            table_html += "<tr>"
+            table_html += f"<td style='text-align:right;padding:6px 12px;font-size:0.8rem;font-weight:600;color:{UVA_BLUE};white-space:nowrap;'>{heatmap_names[i]}</td>"
+            for j in range(n_cols):
+                bg = _hm_color(hm_normalized[i][j])
+                val = heatmap_data[i][j]
+                table_html += f"<td style='text-align:center;padding:6px 12px;font-size:0.85rem;font-weight:600;color:{UVA_BLUE};background:{bg};'>{val:.0f}</td>"
+            table_html += "</tr>"
+        table_html += "</tbody></table>"
+        st.markdown(table_html, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown(f"""<div style='font-size:0.78rem;color:{TEXT_GRAY};padding:8px 12px;background:{WHITE};border-radius:8px;border:1px solid {MED_GRAY};'>
+        <strong style='color:{UVA_BLUE};'>Formula Reference:</strong>&nbsp;&nbsp;
+        <strong>Pts/Shot</strong> = PTS / SH &nbsp;·&nbsp;
+        <strong>TO Rate</strong> = TO / (SH+TO+DC+GB) &nbsp;·&nbsp;
+        <strong>Poss Impact</strong> = GB+DC+CT−TO &nbsp;·&nbsp;
+        <strong>Consistency</strong> = 1 − CV(pts/game) &nbsp;·&nbsp;
+        <strong>Clutch</strong> = Avg G(wins) / Avg G(losses)
+    </div>""", unsafe_allow_html=True)
 
 # TAB 2: PLAYER CARDS
 with tab2:
     st.markdown("## Player Performance Cards")
-    for name, data in sorted_players:
+    if sorted_players:
+        player_names = [name for name, _ in sorted_players]
+        selected_player = st.selectbox("Select Player", player_names,
+            format_func=lambda n: f"#{filtered[n]['player']['num']} {n} ({filtered[n]['player']['pos']}) — Impact: {filtered[n]['scores']['overall']:.0f}",
+            key="player_card_selector")
+        _card_data = filtered[selected_player]
+        _card_items = [(selected_player, _card_data)]
+    else:
+        _card_items = []
+        st.info("No players match the current filters.")
+
+    for name, data in _card_items:
         p = data["player"]
         m = data["metrics"]
         s = data["scores"]
@@ -1420,10 +1465,11 @@ with tab4:
                 orientation="h", name="Wins",
                 marker_color=UVA_ORANGE
             ))
-            fig_tech.update_layout(**PLOTLY_LAYOUT, height=380, barmode="overlay",
+            _tech_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k != "margin"}
+            fig_tech.update_layout(**_tech_layout, height=380, barmode="overlay",
                 xaxis=dict(title="Count"), yaxis=dict(tickfont=dict(size=10)),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02),
-                margin=dict(l=140))
+                margin=dict(l=140, r=30, t=40, b=30))
             st.plotly_chart(fig_tech, use_container_width=True)
 
         with tc2:
@@ -1523,10 +1569,11 @@ with tab4:
                 text=[f'{int(t)} ({int(w)}%)' for t, w in zip(dir_wr["total"], dir_wr["win_rate"])],
                 textposition="outside", textfont=dict(size=10, color=UVA_BLUE)
             ))
-            fig_dir.update_layout(**PLOTLY_LAYOUT, height=380,
+            _dir_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k != "margin"}
+            fig_dir.update_layout(**_dir_layout, height=380,
                 yaxis=dict(title="Count"), xaxis=dict(tickfont=dict(size=10), tickangle=-30),
                 title=dict(text="Direction Frequency & Win Rate", font=dict(size=14)),
-                margin=dict(b=80))
+                margin=dict(l=30, r=30, t=40, b=80))
             st.plotly_chart(fig_dir, use_container_width=True)
 
         # Key directional insight box
@@ -1555,9 +1602,10 @@ with tab4:
                 text=[str(v) for v in who_counts.values],
                 textposition="outside", textfont=dict(size=11, color=UVA_BLUE)
             ))
-            fig_who.update_layout(**PLOTLY_LAYOUT, height=300,
+            _who_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k != "margin"}
+            fig_who.update_layout(**_who_layout, height=300,
                 title=dict(text="Win Contribution (Who Secures Ball?)", font=dict(size=14)),
-                xaxis=dict(title="Wins Secured"), margin=dict(l=120))
+                xaxis=dict(title="Wins Secured"), margin=dict(l=120, r=30, t=40, b=30))
             st.plotly_chart(fig_who, use_container_width=True)
 
         with wc2:
@@ -2131,11 +2179,12 @@ with tab5:
                 textposition="outside", textfont=dict(size=9, color=UVA_BLUE)
             ))
             fig.add_vline(x=55, line_dash="dash", line_color=MED_GRAY)
-            fig.update_layout(**PLOTLY_LAYOUT, height=300,
+            _cat_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k != "margin"}
+            fig.update_layout(**_cat_layout, height=300,
                 xaxis=dict(title="Save %", range=[0, 110]),
                 yaxis=dict(tickfont=dict(size=9)),
                 title=dict(text=title, font=dict(size=13)),
-                margin=dict(l=100, r=60))
+                margin=dict(l=100, r=60, t=40, b=30))
             with col_obj:
                 st.plotly_chart(fig, use_container_width=True)
 

@@ -438,6 +438,52 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                         </div>"""
                         st.markdown(gk_html, unsafe_allow_html=True)
 
+        # ── Milestone 3: Dependent Dropdowns — Position → Player spotlight ──
+        st.markdown("---")
+        st.markdown('<h4 style="color:#232D4B;">Player Spotlight</h4>', unsafe_allow_html=True)
+        st.caption("Select a position to filter available players, then pick a player for a detailed game snapshot.")
+
+        uva_pl = sheets.get("UVA_Players")
+        if uva_pl is not None and not uva_pl.empty and "Player" in uva_pl.columns:
+            # build position map from player intelligence data if available
+            # fallback: infer from stats (GK has saves-related cols)
+            _all_positions = sorted(set(
+                ["A", "M", "D", "GK"] if "Position" not in uva_pl.columns
+                else uva_pl["Position"].dropna().unique()
+            ))
+            dep1, dep2 = st.columns(2)
+            with dep1:
+                spot_pos = st.selectbox("Position Filter", _all_positions, key="spotlight_pos",
+                                        help="Selecting a position filters the Player dropdown")
+            # build dependent player list based on position
+            # without explicit Position column, use heuristics: GK if row has very low SH
+            if "Position" in uva_pl.columns:
+                pos_players = uva_pl[uva_pl["Position"] == spot_pos]["Player"].tolist()
+            else:
+                # heuristic: GK = low shots & high saves; everyone else = field
+                if spot_pos == "GK":
+                    pos_players = uva_pl[uva_pl["SH"] == 0]["Player"].tolist() if "SH" in uva_pl.columns else []
+                else:
+                    pos_players = uva_pl[uva_pl["SH"] > 0]["Player"].tolist() if "SH" in uva_pl.columns else uva_pl["Player"].tolist()
+            if not pos_players:
+                pos_players = uva_pl["Player"].tolist()  # fallback
+
+            with dep2:
+                spot_player = st.selectbox("Player", pos_players, key="spotlight_player",
+                                           help="Players available depend on Position Filter selection")
+
+            # show that player's stats for this game
+            p_row = uva_pl[uva_pl["Player"] == spot_player]
+            if not p_row.empty:
+                p = p_row.iloc[0]
+                sp_cols = st.columns(6)
+                stat_map = [("Goals", "G"), ("Assists", "A"), ("Shots", "SH"),
+                            ("GB", "GB"), ("DC", "DC"), ("TO", "TO")]
+                for col_obj, (label, col_key) in zip(sp_cols, stat_map):
+                    val = int(p.get(col_key, 0)) if pd.notna(p.get(col_key)) else 0
+                    with col_obj:
+                        st.metric(label, val)
+
     except Exception as e:
         st.error(f"Error in Players & Team Stats tab: {e}")
         import traceback

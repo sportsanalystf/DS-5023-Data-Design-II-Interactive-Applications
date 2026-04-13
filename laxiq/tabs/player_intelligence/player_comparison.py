@@ -12,6 +12,16 @@ from .player_cards import HEADSHOT_URLS
 from .charts import PLOTLY_LAYOUT
 
 
+def _warn_duplicate_player():
+    """on_change callback — warn user if both dropdowns select the same player."""
+    if (st.session_state.get("compare_player_1")
+            and st.session_state.get("compare_player_2")
+            and st.session_state["compare_player_1"] == st.session_state["compare_player_2"]):
+        st.session_state["_cmp_dup_warn"] = True
+    else:
+        st.session_state["_cmp_dup_warn"] = False
+
+
 def render(sorted_players, all_data):
     """Render the Player Comparison tab for head-to-head analysis of two players."""
     st.markdown("## Head-to-Head Comparison")
@@ -22,8 +32,15 @@ def render(sorted_players, all_data):
         st.warning("Need at least 2 players for comparison.")
     else:
         c1, c2 = st.columns(2)
-        with c1: p1_sel = st.selectbox("Player 1", comp_options, index=0)
-        with c2: p2_sel = st.selectbox("Player 2", comp_options, index=min(1, len(comp_options)-1))
+        # Milestone 3: on_change callback warns when same player is selected in both dropdowns
+        with c1: p1_sel = st.selectbox("Player 1", comp_options, index=0,
+                                        key="compare_player_1", on_change=_warn_duplicate_player)
+        with c2: p2_sel = st.selectbox("Player 2", comp_options, index=min(1, len(comp_options)-1),
+                                        key="compare_player_2", on_change=_warn_duplicate_player)
+
+        # show duplicate warning via callback flag
+        if st.session_state.get("_cmp_dup_warn"):
+            st.warning("⚠️ You've selected the same player in both slots. Choose two different players for a meaningful comparison.")
 
         p1_name = comp_names[comp_options.index(p1_sel)]
         p2_name = comp_names[comp_options.index(p2_sel)]

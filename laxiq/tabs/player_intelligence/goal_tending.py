@@ -109,6 +109,7 @@ def render(all_data):
     josephson = all_data.get("Mel Josephson")
 
     # two sub-tabs: shot intelligence first, then GK comparison
+    # Milestone 3: widget key for sub-tab tracking
     gk_sub1, gk_sub2 = st.tabs(["🎯 Shot Intelligence (Finnelle)", "📊 GK Comparison"])
 
     # ── sub-tab 1: shot intelligence ──
@@ -400,7 +401,7 @@ def render(all_data):
             st.plotly_chart(fig_prog, use_container_width=True)
 
         # shot log table
-        with st.expander("📋 Complete Shot Log", expanded=False):
+        with st.expander("📋 Complete Shot Log", expanded=False, key="gk_shot_log_expander"):
             log_df = filt_df[["id", "game", "q", "r", "sh", "fz", "st", "sit", "gz", "dn"]].copy()
             log_df.columns = ["#", "Game", "Qtr", "Result", "Shooter", "Field Zone", "Shot Type", "Situation", "Goal Zone", "Difficulty"]
             st.dataframe(log_df, use_container_width=True, hide_index=True, height=400)

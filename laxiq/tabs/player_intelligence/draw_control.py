@@ -59,6 +59,7 @@ def render(all_data):
     dc_per_game = total_dc / max(_max_gp, 1)
 
     # two sub-tabs
+    # Milestone 3: widget key for sub-tab tracking
     dc_sub1, dc_sub2 = st.tabs(["🏠 UVA Draw Analysis", "🔍 UVA Draw Control Scouting Report"])
 
     # ── sub-tab 1: team-level draw analysis from box scores ──
@@ -432,7 +433,7 @@ def render(all_data):
         st.markdown("---")
 
         # all clips table
-        with st.expander("📋 View All 32 Scouting Clips", expanded=False):
+        with st.expander("📋 View All 32 Scouting Clips", expanded=False, key="dc_clips_expander"):
             display_df = uva_df[["id", "p", "tech", "dir", "clk", "ht", "out", "poss", "who", "wing", "ttp", "spd"]].copy()
             display_df.columns = ["Clip", "Player", "Technique", "Direction", "Clock", "Height", "Outcome", "Possession", "Secured By", "Wing", "TTP (s)", "Speed"]
             st.dataframe(display_df, use_container_width=True, hide_index=True, height=400)

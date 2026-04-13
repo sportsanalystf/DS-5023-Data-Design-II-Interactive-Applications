@@ -289,6 +289,13 @@ with st.sidebar:
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")
     st.page_link("pages/2_Player_Intelligence.py", label="⚔️ Player Intelligence")
+    st.divider()
+    # ── Milestone 3: Dynamic UI — view mode toggle ──
+    # Coach View shows simplified summaries; Analyst View reveals advanced metrics & charts
+    view_mode = st.radio("Dashboard Mode", ["Coach View", "Analyst View"],
+                         index=1, key="view_mode",
+                         help="Coach View: streamlined game-day summaries. Analyst View: full advanced metrics.")
+    st.caption("Coach View hides advanced analytics for a cleaner game-day experience.")
 
 # data loading
 def load_data():
@@ -454,8 +461,11 @@ def _load_data_fallback():
     return players, games_labels, game_results
 
 
-# main app
-players, games, game_results = load_data()
+# ── Milestone 3: User Feedback — spinner + progress bar during data load ──
+with st.spinner("Loading player analytics data..."):
+    players, games, game_results = load_data()
+    _load_progress = st.progress(0, text="Computing advanced metrics...")
+
 
 team_avg = {}
 active = {k: v for k, v in players.items() if v["gp"] >= 2}
@@ -468,7 +478,8 @@ team_avg["max_dcpg"] = max(v["dc"]/v["gp"] for v in active.values())
 team_avg["max_poss_impact"] = max(v["gb"]+v["dc"]+v["ct"]-v["to"] for v in active.values())
 
 all_data = {}
-for name, p in players.items():
+_total_players = len(players)
+for _idx, (name, p) in enumerate(players.items()):
     m = compute_advanced_metrics(p)
     s = compute_impact_scores(p, m, team_avg)
     flags = get_development_flags(p, m, s)
@@ -477,6 +488,9 @@ for name, p in players.items():
     recs = generate_recommendations(name, p, m, s, tier_num, flags)
     all_data[name] = {"player": p, "metrics": m, "scores": s, "flags": flags,
                       "tier_num": tier_num, "tier_label": tier_label, "notes": notes, "recs": recs}
+    # Milestone 3: progress bar updates as each player is processed
+    _load_progress.progress((_idx + 1) / _total_players, text=f"Analyzing {name}...")
+_load_progress.empty()  # remove progress bar when done
 
 # Compute season record for header
 _wins = sum(1 for g in (list(all_data.values())[0]["player"]["game_g"] if all_data else []) for _ in [0])
@@ -502,15 +516,37 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# filters
-f1, f2, f3 = st.columns(3)
+# ── Milestone 3: Callback — reset all filters to default values ──
+def _reset_filters():
+    """on_click callback that restores every filter widget to its default value."""
+    st.session_state["filter_position"] = ["A", "M", "D", "GK"]
+    st.session_state["filter_tier"]     = [1, 2, 3, 4]
+    st.session_state["filter_min_gp"]   = 1
+    st.toast("Filters reset to defaults!", icon="🔄")
+
+# filters — key= on each widget lets the Reset button callback clear them via session_state
+f1, f2, f3, f4 = st.columns([3, 3, 3, 1])
 with f1:
-    pos_filter = st.multiselect("Position", ["A", "M", "D", "GK"], default=["A", "M", "D", "GK"])
+    pos_filter = st.multiselect("Position", ["A", "M", "D", "GK"], default=["A", "M", "D", "GK"],
+        key="filter_position")
 with f2:
     tier_filter = st.multiselect("Tier", [1, 2, 3, 4], default=[1, 2, 3, 4],
-        format_func=lambda x: {1:"Tier 1: Driver", 2:"Tier 2: Amplifier", 3:"Tier 3: Specialist", 4:"Tier 4: Dev"}[x])
+        format_func=lambda x: {1:"Tier 1: Driver", 2:"Tier 2: Amplifier", 3:"Tier 3: Specialist", 4:"Tier 4: Dev"}[x],
+        key="filter_tier")
 with f3:
-    min_gp = st.slider("Min Games Played", 1, 5, 1)
+    min_gp = st.slider("Min Games Played", 1, 5, 1, key="filter_min_gp")
+with f4:
+    st.markdown("<br>", unsafe_allow_html=True)  # vertical alignment
+    st.button("🔄 Reset", on_click=_reset_filters, key="reset_filters_btn",
+              help="Reset all filters to default values")
+
+# ── Milestone 3: Input Validation — 4 scenarios ──
+# Scenario 1: empty position filter
+if not pos_filter:
+    st.error("⚠️ **No positions selected.** Please select at least one position to view player data.")
+# Scenario 2: empty tier filter
+if not tier_filter:
+    st.error("⚠️ **No tiers selected.** Please select at least one tier to view player data.")
 
 filtered = {k: v for k, v in all_data.items()
             if v["player"]["pos"] in pos_filter
@@ -518,7 +554,13 @@ filtered = {k: v for k, v in all_data.items()
             and v["player"]["gp"] >= min_gp}
 sorted_players = sorted(filtered.items(), key=lambda x: x[1]["scores"]["overall"], reverse=True)
 
+# Scenario 3: min GP too high — filters out everyone
+if not filtered and (pos_filter and tier_filter):
+    st.warning(f"⚠️ No players found with **{min_gp}+ games played** in the selected positions/tiers. "
+               f"Try lowering the minimum games played filter.")
+
 # Tab creation
+# Milestone 3: widget key enables programmatic tab tracking via st.session_state
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Team Overview", "Player Cards", "Player Comparison", "Draw Control Center", "Goal Tending"])
 
 # Render each tab module

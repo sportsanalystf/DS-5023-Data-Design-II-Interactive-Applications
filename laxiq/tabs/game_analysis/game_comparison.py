@@ -28,9 +28,15 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                                           format_func=lambda i: all_games[i]["label"],
                                           index=default_b, key="cmp_b")
 
-            sheets_a = load_game(all_games[game_a_idx]["file"])
-            sheets_b = load_game(all_games[game_b_idx]["file"])
-            comparison = compare_games(sheets_a, sheets_b)
+            # Milestone 3: Input Validation — Scenario 4: same game selected
+            if game_a_idx == game_b_idx:
+                st.warning("⚠️ You've selected the **same game** in both slots. Choose two different games for a meaningful comparison.")
+
+            # Milestone 3: User Feedback — spinner during comparison load
+            with st.spinner("Comparing game data..."):
+                sheets_a = load_game(all_games[game_a_idx]["file"])
+                sheets_b = load_game(all_games[game_b_idx]["file"])
+                comparison = compare_games(sheets_a, sheets_b)
 
             if not comparison.empty:
                 # game result headers

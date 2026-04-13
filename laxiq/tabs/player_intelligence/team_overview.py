@@ -36,18 +36,25 @@ def render(filtered, sorted_players, all_data):
                        f"<div style='font-size:0.8rem;color:{UVA_BLUE};margin-top:8px;'>{'<br>'.join(tier_players[t])}</div>"
                        f"</div>", unsafe_allow_html=True)
 
-    st.markdown("")
-    chart_col1, chart_col2 = st.columns(2)
-    with chart_col1:
-        st.markdown("### Usage vs Efficiency")
-        ue_fig = make_usage_efficiency_chart(filtered)
-        if ue_fig:
-            st.plotly_chart(ue_fig, use_container_width=True)
-    with chart_col2:
-        st.markdown("### Cumulative Scoring")
-        cum_fig = make_cumulative_points_chart(filtered)
-        if cum_fig:
-            st.plotly_chart(cum_fig, use_container_width=True)
+    # ── Milestone 3: Dynamic UI — hide advanced charts in Coach View ──
+    _analyst_mode = st.session_state.get("view_mode", "Analyst View") == "Analyst View"
+
+    if _analyst_mode:
+        st.markdown("")
+        chart_col1, chart_col2 = st.columns(2)
+        with chart_col1:
+            st.markdown("### Usage vs Efficiency")
+            ue_fig = make_usage_efficiency_chart(filtered)
+            if ue_fig:
+                st.plotly_chart(ue_fig, use_container_width=True)
+        with chart_col2:
+            st.markdown("### Cumulative Scoring")
+            cum_fig = make_cumulative_points_chart(filtered)
+            if cum_fig:
+                st.plotly_chart(cum_fig, use_container_width=True)
+    else:
+        # Coach View — show concise summary instead of scatter/bar charts
+        st.info("📋 **Coach View** — Switch to Analyst View in the sidebar to see Usage vs Efficiency and Cumulative Scoring charts.")
 
     # roster metrics heatmap
     st.markdown("### Roster Metrics Heatmap")
@@ -106,12 +113,14 @@ def render(filtered, sorted_players, all_data):
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown(f"""<div style='font-size:0.78rem;color:{TEXT_GRAY};padding:8px 12px;background:{WHITE};border-radius:8px;border:1px solid {MED_GRAY};'>
-        <strong style='color:{UVA_BLUE};'>Formula Reference:</strong>&nbsp;&nbsp;
-        <strong>Pts/Shot</strong> = PTS / SH &nbsp;·&nbsp;
-        <strong>TO Rate</strong> = TO / (SH+TO+DC+GB) &nbsp;·&nbsp;
-        <strong>Poss Impact</strong> = GB+DC+CT−TO &nbsp;·&nbsp;
-        <strong>Consistency</strong> = 1 − CV(pts/game) &nbsp;·&nbsp;
-        <strong>Clutch</strong> = Avg G(wins) / Avg G(losses)
-    </div>""", unsafe_allow_html=True)
+    # formula reference — only in Analyst View
+    if _analyst_mode:
+        st.markdown("---")
+        st.markdown(f"""<div style='font-size:0.78rem;color:{TEXT_GRAY};padding:8px 12px;background:{WHITE};border-radius:8px;border:1px solid {MED_GRAY};'>
+            <strong style='color:{UVA_BLUE};'>Formula Reference:</strong>&nbsp;&nbsp;
+            <strong>Pts/Shot</strong> = PTS / SH &nbsp;·&nbsp;
+            <strong>TO Rate</strong> = TO / (SH+TO+DC+GB) &nbsp;·&nbsp;
+            <strong>Poss Impact</strong> = GB+DC+CT−TO &nbsp;·&nbsp;
+            <strong>Consistency</strong> = 1 − CV(pts/game) &nbsp;·&nbsp;
+            <strong>Clutch</strong> = Avg G(wins) / Avg G(losses)
+        </div>""", unsafe_allow_html=True)

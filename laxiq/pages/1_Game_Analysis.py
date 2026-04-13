@@ -6,6 +6,8 @@ st.set_page_config(page_title="Lax IQ - Game Analysis", page_icon="⚔️", layo
 from style import *
 from analytics import *
 from sidebar import render_sidebar
+from api_integrations import (fetch_game_weather, fetch_team_info,
+                               render_weather_card, render_team_info_card)
 
 st.markdown(CSS, unsafe_allow_html=True)
 st.markdown(f"""<style>
@@ -134,7 +136,25 @@ for col, cat in zip(g_cols, grade_cats):
         <div style="font-size:1.6rem;font-weight:700;color:{gc};">{g}</div>
     </div>""", unsafe_allow_html=True)
 
+# ── Milestone 3: API Integration — Weather & Team Info ──
+# Weather card for the game location — extract city from "Stadium, City, State" format
+with st.spinner("Loading weather data..."):
+    _loc_parts = [p.strip() for p in location.split(",")] if location else ["Charlottesville"]
+    # city is typically the second part: "Klockner Stadium, Charlottesville, Va."
+    _loc = _loc_parts[1] if len(_loc_parts) >= 2 else _loc_parts[0]
+    _weather = fetch_game_weather(_loc, game_date if game_date else None)
+    render_weather_card(_weather)
+
+# Opponent team info from TheSportsDB — search with "Lacrosse" qualifier
+with st.spinner("Loading opponent info..."):
+    _team_info = fetch_team_info(f"{opp}")
+    # Only show if the result is actually relevant (lacrosse or generic)
+    if (_team_info and not _team_info.get("error")
+            and _team_info.get("data", {}).get("sport", "").lower() in ("lacrosse", "")):
+        render_team_info_card(_team_info)
+
 # --- tabs ---
+# Milestone 3: widget key enables programmatic tab tracking via st.session_state
 tab_wp, tab_players, tab_moments, tab_compare = st.tabs([
     "📈 Win Probability & WPA",
     "👤 Players & Team Stats",

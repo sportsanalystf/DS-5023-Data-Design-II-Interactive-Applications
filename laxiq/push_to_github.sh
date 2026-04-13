@@ -35,7 +35,7 @@ git commit -m "Update LaxIQ dashboard: redesigned Game Analysis, sidebar logo, c
 - Synthesized PBP data for Maryland (142 events) and Florida State (135 events)
 - Added CSS fixes for selectbox visibility and tab styling
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+"
 
 echo "🚀 Pushing to GitHub..."
 git push origin main

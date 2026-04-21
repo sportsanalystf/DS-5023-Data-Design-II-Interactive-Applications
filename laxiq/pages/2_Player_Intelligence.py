@@ -289,6 +289,7 @@ with st.sidebar:
     st.page_link("Home.py", label="🏠 Season Overview")
     st.page_link("pages/1_Game_Analysis.py", label="📊 Game Analysis")
     st.page_link("pages/2_Player_Intelligence.py", label="⚔️ Player Intelligence")
+    st.page_link("pages/3_LaxIQ_Assistant.py", label="🤖 LaxIQ Assistant")
     st.divider()
     # ── Milestone 3: Dynamic UI — view mode toggle ──
     # Coach View shows simplified summaries; Analyst View reveals advanced metrics & charts
@@ -296,6 +297,10 @@ with st.sidebar:
                          index=1, key="view_mode",
                          help="Coach View: streamlined game-day summaries. Analyst View: full advanced metrics.")
     st.caption("Coach View hides advanced analytics for a cleaner game-day experience.")
+
+# Sidebar chat panel (Milestone 4)
+from sidebar_chat import render_sidebar_chat
+render_sidebar_chat()
 
 # data loading
 def load_data():

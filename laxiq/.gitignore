@@ -8,3 +8,4 @@ dist/
 build/
 .env
 SKILL.md
+push_to_github.sh

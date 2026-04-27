@@ -6,10 +6,15 @@ input validation, prompt injection defense, and loading feedback.
 
 import streamlit as st
 from style import CSS, UVA_BLUE, UVA_ORANGE
-from gemini_chat import (
-    validate_api_key, send_message, clear_chat,
-    check_prompt_injection,
-)
+
+try:
+    from gemini_chat import (
+        validate_api_key, send_message, clear_chat,
+        check_prompt_injection,
+    )
+    CHAT_AVAILABLE = True
+except ImportError:
+    CHAT_AVAILABLE = False
 
 # ── Page config ──────────────────────────────────────────────────────
 
@@ -48,6 +53,10 @@ with st.sidebar:
     st.page_link("pages/3_LaxIQ_Assistant.py", label="🤖 LaxIQ Assistant")
 
     st.divider()
+
+    if not CHAT_AVAILABLE:
+        st.warning("Install google-generativeai to use chat")
+        st.stop()
 
     # Clear chat button (on_click callback — no st.rerun needed)
     st.button("🗑️ Clear Chat", on_click=clear_chat, key="clear_chat_btn",

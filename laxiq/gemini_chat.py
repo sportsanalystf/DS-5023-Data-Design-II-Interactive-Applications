@@ -11,11 +11,14 @@ Prompt engineering techniques used:
 """
 
 import streamlit as st
-import google.generativeai as genai
-import json
 import re
-import pandas as pd
-from datetime import datetime
+
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    GENAI_AVAILABLE = False
 
 
 # ── Prompt injection keywords ────────────────────────────────────────
@@ -48,10 +51,15 @@ def build_data_context() -> str:
     without seeing the full dataset.
     """
     from analytics import list_games, load_game, aggregate_player_stats, player_season_totals
-    from Home import SEASON_SCHEDULE, played_games, wins, losses, goals_for, goals_against
 
     games = list_games()
     n = len(games)
+
+    # Compute season record from game data (avoids importing Home.py)
+    wins = sum(1 for g in games if g.get("home_score", 0) > g.get("away_score", 0))
+    losses = n - wins
+    goals_for = sum(g.get("home_score", 0) for g in games)
+    goals_against = sum(g.get("away_score", 0) for g in games)
 
     # Season record
     lines = [
@@ -94,12 +102,15 @@ def build_data_context() -> str:
     except Exception:
         lines.append("\n(Player stats unavailable)")
 
-    # Upcoming schedule
-    upcoming = [g for g in SEASON_SCHEDULE if g["result"] is None and g.get("note") not in ("Exhibition", "TBA")]
-    if upcoming:
-        lines.append("\nUPCOMING GAMES:")
-        for g in upcoming[:5]:
-            lines.append(f"  {g['date']} {g['ha']} {g['rank']} {g['opponent']} — {g['note']}")
+    # Upcoming games (hardcoded — avoids importing Home.py which runs st.set_page_config)
+    upcoming_games = [
+        {"date": "APR 3", "ha": "vs", "rank": "#2", "opponent": "North Carolina", "note": "4:00 PM EDT"},
+        {"date": "APR 11", "ha": "vs", "rank": "#13", "opponent": "Boston College", "note": "1:00 PM EDT"},
+        {"date": "APR 16", "ha": "at", "rank": "", "opponent": "Virginia Tech", "note": "6:00 PM EDT"},
+    ]
+    lines.append("\nUPCOMING GAMES:")
+    for g in upcoming_games:
+        lines.append(f"  {g['date']} {g['ha']} {g['rank']} {g['opponent']} — {g['note']}")
 
     return "\n".join(lines)
 
@@ -208,6 +219,8 @@ FEW_SHOT_EXAMPLES = [
 
 def validate_api_key() -> bool:
     """Check that GEMINI_API_KEY exists in st.secrets and is non-empty."""
+    if not GENAI_AVAILABLE:
+        return False
     key = st.secrets.get("GEMINI_API_KEY", "")
     return bool(key and len(key) > 5)
 

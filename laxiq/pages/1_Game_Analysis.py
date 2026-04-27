@@ -38,8 +38,11 @@ st.markdown(f"""<style>
 render_sidebar(show_game_selector=True)
 
 # Sidebar chat panel (Milestone 4)
-from sidebar_chat import render_sidebar_chat
-render_sidebar_chat()
+try:
+    from sidebar_chat import render_sidebar_chat
+    render_sidebar_chat()
+except Exception:
+    pass
 
 sheets = st.session_state["selected_sheets"]
 game = st.session_state["selected_game"]

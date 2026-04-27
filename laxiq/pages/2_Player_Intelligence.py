@@ -299,8 +299,11 @@ with st.sidebar:
     st.caption("Coach View hides advanced analytics for a cleaner game-day experience.")
 
 # Sidebar chat panel (Milestone 4)
-from sidebar_chat import render_sidebar_chat
-render_sidebar_chat()
+try:
+    from sidebar_chat import render_sidebar_chat
+    render_sidebar_chat()
+except Exception:
+    pass
 
 # data loading
 def load_data():

@@ -112,8 +112,11 @@ with st.sidebar:
     st.page_link("pages/3_LaxIQ_Assistant.py", label="🤖 LaxIQ Assistant")
 
 # Sidebar chat panel
-from sidebar_chat import render_sidebar_chat
-render_sidebar_chat()
+try:
+    from sidebar_chat import render_sidebar_chat
+    render_sidebar_chat()
+except Exception:
+    pass  # chat unavailable if google-generativeai not installed
 
 # --- schedule data ---
 # hardcoded the full schedule since it doesn't change - scores updated after each game

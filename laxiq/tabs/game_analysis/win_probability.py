@@ -12,13 +12,11 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
         pbp = sheets.get("Play_By_Play")
         scoring_summary = sheets.get("Scoring_Summary")
 
-        # chart theme constants
-        # plot area is dark; but titles, axis labels, legends sit on the
-        # light page background (transparent paper), so they must be dark.
-        DARK_BG = "#2A3142"
-        GRID_DARK = "rgba(255,255,255,0.08)"
-        LABEL_DARK = "#232D4B"       # dark navy for text on light bg
-        LABEL_MED  = "#4A5568"       # medium gray-blue for secondary text
+        # chart theme constants — white background
+        CHART_BG = "white"
+        GRID_COLOR = "#ECECEC"
+        LABEL_DARK = "#232D4B"
+        LABEL_MED  = "#4A5568"
 
         # had to handle the case where PBP data isn't available
         if pbp is None or pbp.empty:
@@ -130,7 +128,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
                     help="Toggle which play types appear as markers", key="wp_event_filter"
                 )
 
-                # build dark-themed WP chart
+                # build WP chart
                 fig = go.Figure()
 
                 # main WP line — orange, smooth spline
@@ -157,7 +155,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
 
                     for ev, lbl, mcolor, opacity, border in [
                         (uva_ev, "UVA", uva_color, 1.0, "white"),
-                        (opp_ev, "OPP", opp_color, 0.7, DARK_BG),
+                        (opp_ev, "OPP", opp_color, 0.7, CHART_BG),
                     ]:
                         if ev.empty:
                             continue
@@ -172,33 +170,33 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
                         ))
 
                 # 50% reference line
-                fig.add_hline(y=50, line_dash="dash", line_color="rgba(255,255,255,0.25)", line_width=1)
+                fig.add_hline(y=50, line_dash="dash", line_color="rgba(0,0,0,0.15)", line_width=1)
                 # quarter dividers
                 for mins, label in [(15, ""), (30, "Half"), (45, "")]:
-                    fig.add_vline(x=mins, line_dash="dot", line_color="rgba(255,255,255,0.15)", line_width=1,
+                    fig.add_vline(x=mins, line_dash="dot", line_color="rgba(0,0,0,0.1)", line_width=1,
                                   annotation_text=label, annotation_position="top",
                                   annotation_font_color=LABEL_MED)
 
                 fig.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
                     font=dict(family="DM Sans, sans-serif", color=LABEL_DARK, size=12),
-                    margin=dict(l=60, r=20, t=70, b=55), height=500,
+                    margin=dict(l=60, r=20, t=70, b=120), height=550,
                     title=dict(text=chart_title, font=dict(size=15, color=LABEL_DARK),
                                x=0.01, xanchor="left"),
                     xaxis=dict(title="Minutes Elapsed", range=[-0.5, 61],
                                tickvals=[0, 15, 30, 45, 60],
                                ticktext=["Start", "Q2", "Half", "Q4", "Final"],
-                               gridcolor=GRID_DARK, zerolinecolor=GRID_DARK,
-                               linecolor="rgba(255,255,255,0.2)",
+                               gridcolor=GRID_COLOR, zerolinecolor=GRID_COLOR,
+                               linecolor=BORDER,
                                tickfont=dict(color=LABEL_DARK, size=12),
                                title_font=dict(color=LABEL_MED, size=13)),
                     yaxis=dict(title="Virginia Win Probability (%)", range=[0, 100],
-                               ticksuffix="%", gridcolor=GRID_DARK, zerolinecolor=GRID_DARK,
-                               linecolor="rgba(255,255,255,0.2)",
+                               ticksuffix="%", gridcolor=GRID_COLOR, zerolinecolor=GRID_COLOR,
+                               linecolor=BORDER,
                                tickfont=dict(color=LABEL_DARK, size=12),
                                title_font=dict(color=LABEL_MED, size=13)),
                     hovermode="closest",
-                    legend=dict(orientation="h", yanchor="bottom", y=1.06,
+                    legend=dict(orientation="h", yanchor="top", y=-0.15,
                                 xanchor="center", x=0.5, font=dict(size=10, color=LABEL_DARK),
                                 bgcolor="rgba(255,255,255,0.9)", bordercolor=BORDER,
                                 borderwidth=1),

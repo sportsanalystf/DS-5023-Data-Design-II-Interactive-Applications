@@ -1,7 +1,6 @@
-# style constants and helpers for laxiq
+# style constants and helpers
 
-# --- colors ---
-# colors from https://brand.virginia.edu
+# colors
 
 UVA_BLUE = "#232D4B"
 UVA_BLUE_25 = "#C8CBD2"
@@ -23,7 +22,7 @@ BORDER = "#DADADA"
 TEXT_PRIMARY = UVA_BLUE
 TEXT_MUTED = "#666666"
 
-# --- plotly theme ---
+# plotly theme
 
 PLOT_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
@@ -34,8 +33,7 @@ PLOT_LAYOUT = dict(
     yaxis=dict(gridcolor="#ECECEC", zerolinecolor=BORDER, linecolor=BORDER),
 )
 
-# --- css ---
-# most of this CSS is for overriding streamlit defaults
+# css overrides for streamlit
 
 CSS = """
 <style>
@@ -45,7 +43,7 @@ CSS = """
 .stApp { background: #F1F1EF; }
 section[data-testid="stSidebar"] { background: #FFFFFF; border-right: 1px solid #DADADA; }
 
-/* Hide Streamlit's auto-generated page navigation in the sidebar */
+/* hide streamlit page navigation */
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] { display: none !important; }
 section[data-testid="stSidebar"] nav { display: none !important; }
 section[data-testid="stSidebar"] ul[data-testid="stSidebarNavItems"] { display: none !important; }
@@ -71,7 +69,7 @@ section[data-testid="stSidebar"] .stSelectbox div[role="combobox"] * {
 section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] svg {
     fill: #232D4B !important;
 }
-/* Make dropdown menu items readable (dark text on white bg) */
+/* dropdown menu styling */
 section[data-testid="stSidebar"] [data-baseweb="popover"] li,
 section[data-testid="stSidebar"] [data-baseweb="popover"] li * {
     color: #232D4B !important;
@@ -79,7 +77,7 @@ section[data-testid="stSidebar"] [data-baseweb="popover"] li * {
     font-weight: 500 !important;
 }
 
-/* Ensure main content text is dark on light background */
+/* text styling */
 .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
     color: #232D4B !important;
 }
@@ -192,34 +190,35 @@ section[data-testid="stSidebar"] [data-baseweb="popover"] li * {
 
 /* Letter grade cards row */
 .grade-strip {
-    display: flex; background: #1a2238; border-radius: 0 0 14px 14px;
-    overflow: hidden; margin-bottom: 18px;
+    display: flex; background: white; border-radius: 0 0 14px 14px;
+    overflow: hidden; margin-bottom: 18px; border: 1px solid #DADADA; border-top: none;
 }
 .grade-card {
     flex: 1; text-align: center; padding: 14px 8px;
-    border-right: 1px solid rgba(255,255,255,0.08);
+    border-right: 1px solid #ECECEC;
 }
 .grade-card:last-child { border-right: none; }
 .grade-card .grade-label {
-    font-size: 0.62rem; color: rgba(255,255,255,0.5);
+    font-size: 0.62rem; color: #999;
     text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;
 }
 .grade-card .grade-value {
     font-size: 1.5rem; font-weight: 700; margin-top: 4px;
 }
 
-/* Dark stat comparison card */
+/* Stat comparison card */
 .stat-comparison-dark {
-    background: #232D4B; border-radius: 12px; padding: 20px; color: white;
+    background: white; border-radius: 12px; padding: 20px; color: #232D4B;
+    border: 1px solid #DADADA; box-shadow: 0 2px 8px rgba(35,45,75,0.06);
 }
 </style>
 """
 
 
-# --- html helpers ---
+# html helpers
 
 def metric_card(value, label, color_class=""):
-    # generates the metric card html
+    # generate metric card
     vc = f' {color_class}' if color_class else ''
     return f'<div class="metric-card"><div class="metric-value{vc}">{value}</div><div class="metric-label">{label}</div></div>'
 
@@ -248,20 +247,20 @@ def game_header(home_team, away_team, home_score, away_score, result, date, loca
 
 
 def insight_box(text, variant=""):
-    # generates insight box html with optional variant
+    # generate insight box
     cls = f"insight-box {variant}" if variant else "insight-box"
     return f'<div class="{cls}">{text}</div>'
 
 
 def game_header_v2(home_team, away_team, home_score, away_score, result, date,
                     location="", home_record="", away_record="", quarter_scores=None):
-    # enhanced game header with quarter pills and records
+    # game header with quarter pills and records
     badge_bg = "#2E7D32" if result == "W" else "#C62828"
     badge_text = "WIN" if result == "W" else "LOSS"
     loser_cls = ' loser' if result == "W" else ''
     winner_cls = ' loser' if result == "L" else ''
 
-    # Quarter pills HTML
+    # quarter pill html
     qp_html = ""
     if quarter_scores:
         pills = []
@@ -293,7 +292,7 @@ def game_header_v2(home_team, away_team, home_score, away_score, result, date,
 
 
 def grade_strip(grades):
-    # probably could simplify this but it works
+    # generate grade strip
     from analytics import grade_color
     categories = ["Offense", "Defense", "Transition", "Draw Unit", "Goalkeeping", "Discipline"]
     cards = []
@@ -308,7 +307,7 @@ def grade_strip(grades):
 
 
 def moment_card(title, description, wpa=None, variant=""):
-    # creates a moment card with optional wpa indicator
+    # create moment card
     cls = f"moment-card {variant}"
     wpa_html = ""
     if wpa is not None:

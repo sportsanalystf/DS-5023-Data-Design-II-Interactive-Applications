@@ -9,8 +9,8 @@ from analytics import *
 def render(sheets, game, info, home_team, opp, hs, aws):
     """Render the player and team stats analysis tab."""
     try:
-        DARK_BG_T2 = "#2A3142"
-        GRID_DARK_T2 = "rgba(255,255,255,0.08)"
+        CHART_BG = "white"
+        GRID_COLOR = "#ECECEC"
         LABEL_DARK_T2 = "#232D4B"
         LABEL_MED_T2 = "#4A5568"
         UVA_BAR = "#3A5A8C"   # steel blue for UVA bars
@@ -108,15 +108,15 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                 chart_h = max(400, n_cats * 34 + 80)
 
                 fig_stats.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG_T2,
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
                     font=dict(family="DM Sans, sans-serif", color=LABEL_DARK_T2, size=12),
                     margin=dict(l=130, r=60, t=50, b=30), height=chart_h,
                     title=dict(text="Statistical Comparison", font=dict(size=15, color=LABEL_DARK_T2),
                                x=0.01, xanchor="left"),
                     xaxis=dict(showgrid=False, zeroline=True,
-                               zerolinecolor="rgba(255,255,255,0.3)", zerolinewidth=1,
+                               zerolinecolor="rgba(0,0,0,0.15)", zerolinewidth=1,
                                showticklabels=False, range=[-(max_val * 1.25), max_val * 1.25]),
-                    yaxis=dict(gridcolor=GRID_DARK_T2,
+                    yaxis=dict(gridcolor=GRID_COLOR,
                                tickfont=dict(color=LABEL_DARK_T2, size=12)),
                     barmode="overlay", showlegend=True, bargap=0.25,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02,
@@ -168,7 +168,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     ov = safe_int(opp_row.iloc[0].get(q_label, 0)) if not opp_row.empty else 0
                     qoq_data[q_label][cat] = (uv, ov)
 
-            # render as 4 dark quarter cards side by side
+            # render as 4 quarter cards side by side
             q_cols = st.columns(4)
             short_labels = {"Goals": "G", "Shots": "SH", "Draw Controls": "DC",
                             "Ground Balls": "GB", "Turnovers": "TO", "Saves": "SV"}
@@ -183,28 +183,28 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     uv, ov = q_stats_map.get(cat, (0, 0))
                     sl = short_labels.get(cat, cat[:2])
                     # highlight advantage
-                    uv_w = "font-weight:700;color:white;" if uv > ov else "color:rgba(255,255,255,0.5);"
-                    ov_w = "font-weight:700;color:white;" if ov > uv else "color:rgba(255,255,255,0.5);"
+                    uv_w = f"font-weight:700;color:{LABEL_DARK_T2};" if uv > ov else "color:#999;"
+                    ov_w = f"font-weight:700;color:{LABEL_DARK_T2};" if ov > uv else "color:#999;"
                     if uv == ov:
-                        uv_w = ov_w = "color:rgba(255,255,255,0.7);"
+                        uv_w = ov_w = "color:#666;"
                     stat_rows_html += f"""<div style="display:flex;justify-content:space-between;
-                        padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.75rem;">
+                        padding:3px 0;border-bottom:1px solid #ECECEC;font-size:0.75rem;">
                         <span style="{uv_w}">{uv}</span>
-                        <span style="color:rgba(255,255,255,0.35);font-size:0.65rem;text-transform:uppercase;
+                        <span style="color:#999;font-size:0.65rem;text-transform:uppercase;
                             letter-spacing:0.5px;">{sl}</span>
                         <span style="{ov_w}">{ov}</span>
                     </div>"""
 
-                card_html = f"""<div style="background:{DARK_BG_T2};border-radius:10px;padding:14px 16px;
-                    border:1px solid rgba(255,255,255,0.08);">
+                card_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
+                    border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);">
                     <div style="text-align:center;margin-bottom:10px;">
-                        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);text-transform:uppercase;
+                        <div style="font-size:0.6rem;color:#999;text-transform:uppercase;
                             letter-spacing:1.5px;font-weight:600;">{q_label}</div>
                         <div style="font-size:1.4rem;font-weight:700;color:{score_color};margin-top:2px;">
                             {g_uva} — {g_opp}</div>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:0 2px 4px;
-                        font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">
+                        font-size:0.6rem;color:#999;text-transform:uppercase;letter-spacing:0.5px;">
                         <span>UVA</span><span>{away_team[:3].upper()}</span>
                     </div>
                     {stat_rows_html}
@@ -278,18 +278,18 @@ def render(sheets, game, info, home_team, opp, hs, aws):
             inf_h = max(350, n_players * 32 + 80)
 
             fig_inf.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG_T2,
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
                 font=dict(family="DM Sans, sans-serif", color=LABEL_DARK_T2, size=12),
                 margin=dict(l=150, r=60, t=50, b=30), height=inf_h,
                 title=dict(text="Virginia Player Influence", font=dict(size=15, color=LABEL_DARK_T2),
                            x=0.01, xanchor="left"),
-                xaxis=dict(title="WPA (%)", gridcolor=GRID_DARK_T2,
-                           zerolinecolor="rgba(255,255,255,0.3)", zerolinewidth=1,
-                           linecolor="rgba(255,255,255,0.2)",
+                xaxis=dict(title="WPA (%)", gridcolor=GRID_COLOR,
+                           zerolinecolor="rgba(0,0,0,0.15)", zerolinewidth=1,
+                           linecolor=BORDER,
                            tickfont=dict(color=LABEL_DARK_T2, size=11),
                            title_font=dict(color=LABEL_MED_T2, size=13),
                            ticksuffix="%"),
-                yaxis=dict(gridcolor=GRID_DARK_T2,
+                yaxis=dict(gridcolor=GRID_COLOR,
                            tickfont=dict(color=LABEL_DARK_T2, size=12)),
                 showlegend=False,
             )
@@ -370,25 +370,25 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                             lbl_style = f"font-size:0.55rem;color:{hl_color};text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;font-weight:600;"
                             box_bg = f"background:{'rgba(76,175,80,0.12)' if hl_color == '#4CAF50' else 'rgba(239,83,80,0.12)'};border-radius:6px;"
                         else:
-                            val_style = "font-size:1.1rem;font-weight:700;color:white;"
-                            lbl_style = "font-size:0.55rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;"
+                            val_style = f"font-size:1.1rem;font-weight:700;color:{LABEL_DARK_T2};"
+                            lbl_style = "font-size:0.55rem;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;"
                             box_bg = ""
                         stat_boxes += f"""<div style="text-align:center;flex:1;padding:3px 2px;{box_bg}">
                             <div style="{val_style}">{stat_val}</div>
                             <div style="{lbl_style}">{stat_label}</div>
                         </div>"""
 
-                    card_html = f"""<div style="background:{DARK_BG_T2};border-radius:10px;padding:14px 16px;
-                        margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);">
+                    card_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
+                        margin-bottom:10px;border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                             <div>
-                                <div style="font-size:0.95rem;font-weight:700;color:white;">{name}</div>
-                                <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">#{number}</div>
+                                <div style="font-size:0.95rem;font-weight:700;color:{LABEL_DARK_T2};">{name}</div>
+                                <div style="font-size:0.65rem;color:#999;">#{number}</div>
                             </div>
                             <div style="font-size:1rem;font-weight:700;color:{wpa_color};
                                 font-family:'Courier New',monospace;">{wpa_val:+.1f}%</div>
                         </div>
-                        <div style="display:flex;gap:4px;margin-top:12px;background:rgba(0,0,0,0.25);
+                        <div style="display:flex;gap:4px;margin-top:12px;background:#F5F5F5;
                             border-radius:8px;padding:8px 4px;">
                             {stat_boxes}
                         </div>
@@ -416,29 +416,29 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                         gk_stat_boxes = ""
                         for sl, sv in [("MIN", gk_min), ("GA", gk_ga), ("SV", gk_sv)]:
                             gk_stat_boxes += f"""<div style="text-align:center;flex:1;">
-                                <div style="font-size:1.1rem;font-weight:700;color:white;">{sv}</div>
-                                <div style="font-size:0.55rem;color:rgba(255,255,255,0.45);text-transform:uppercase;
+                                <div style="font-size:1.1rem;font-weight:700;color:{LABEL_DARK_T2};">{sv}</div>
+                                <div style="font-size:0.55rem;color:#999;text-transform:uppercase;
                                     letter-spacing:0.5px;margin-top:2px;">{sl}</div>
                             </div>"""
 
-                        gk_html = f"""<div style="background:{DARK_BG_T2};border-radius:10px;padding:14px 16px;
-                            margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);max-width:320px;">
+                        gk_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
+                            margin-bottom:10px;border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);max-width:320px;">
                             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                                 <div>
-                                    <div style="font-size:0.95rem;font-weight:700;color:white;">{gk_name}</div>
-                                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">#{gk_num}</div>
+                                    <div style="font-size:0.95rem;font-weight:700;color:{LABEL_DARK_T2};">{gk_name}</div>
+                                    <div style="font-size:0.65rem;color:#999;">#{gk_num}</div>
                                 </div>
                                 <div style="font-size:0.85rem;font-weight:700;color:{dec_color};
                                     letter-spacing:1px;">{gk_dec}</div>
                             </div>
-                            <div style="display:flex;gap:4px;margin-top:12px;background:rgba(0,0,0,0.25);
+                            <div style="display:flex;gap:4px;margin-top:12px;background:#F5F5F5;
                                 border-radius:8px;padding:8px 4px;">
                                 {gk_stat_boxes}
                             </div>
                         </div>"""
                         st.markdown(gk_html, unsafe_allow_html=True)
 
-        # ── Milestone 3: Dependent Dropdowns — Position → Player spotlight ──
+        # position filter -> player spotlight
         st.markdown("---")
         st.markdown('<h4 style="color:#232D4B;">Player Spotlight</h4>', unsafe_allow_html=True)
         st.caption("Select a position to filter available players, then pick a player for a detailed game snapshot.")

@@ -59,10 +59,10 @@ def render(all_data):
     dc_per_game = total_dc / max(_max_gp, 1)
 
     # two sub-tabs
-    # Milestone 3: widget key for sub-tab tracking
+    # sub-tab tracking
     dc_sub1, dc_sub2 = st.tabs(["🏠 UVA Draw Analysis", "🔍 UVA Draw Control Scouting Report"])
 
-    # ── sub-tab 1: team-level draw analysis from box scores ──
+    # sub-tab 1: team draw analysis
     with dc_sub1:
         mc1, mc2, mc3 = st.columns(3)
         mc1.metric("Total Draw Controls", total_dc)
@@ -103,7 +103,7 @@ def render(all_data):
         Improving draw circle ground ball recovery is a high-leverage practice area.
         </div>""", unsafe_allow_html=True)
 
-    # ── sub-tab 2: UVA draw control scouting report (film study) ──
+    # sub-tab 2: scouting report
     with dc_sub2:
         uva_df = pd.DataFrame(UVA_DRAW_CLIPS)
 

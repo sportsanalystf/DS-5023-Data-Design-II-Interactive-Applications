@@ -28,11 +28,11 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                                           format_func=lambda i: all_games[i]["label"],
                                           index=default_b, key="cmp_b")
 
-            # Milestone 3: Input Validation — Scenario 4: same game selected
+            # same game selected
             if game_a_idx == game_b_idx:
                 st.warning("⚠️ You've selected the **same game** in both slots. Choose two different games for a meaningful comparison.")
 
-            # Milestone 3: User Feedback — spinner during comparison load
+            # loading spinner
             with st.spinner("Comparing game data..."):
                 sheets_a = load_game(all_games[game_a_idx]["file"])
                 sheets_b = load_game(all_games[game_b_idx]["file"])
@@ -51,12 +51,13 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     h_sc = int(info_row.get("home_score", 0))
                     a_sc = int(info_row.get("away_score", 0))
                     with col:
-                        st.markdown(f"""<div style="background:{UVA_BLUE};border-radius:10px;padding:14px 18px;
-                            color:white;text-align:center;margin-bottom:8px;">
-                            <span style="background:{badge_bg};padding:2px 10px;border-radius:12px;
+                        st.markdown(f"""<div style="background:white;border-radius:10px;padding:14px 18px;
+                            color:{UVA_BLUE};text-align:center;margin-bottom:8px;border:1px solid {BORDER};
+                            box-shadow:0 2px 8px rgba(35,45,75,0.06);">
+                            <span style="background:{badge_bg};color:white;padding:2px 10px;border-radius:12px;
                                 font-size:0.65rem;font-weight:700;letter-spacing:1px;">{badge}</span>
                             <div style="font-size:1.4rem;font-weight:700;margin-top:6px;">Virginia {h_sc} — {a_sc} {opp_name}</div>
-                            <div style="font-size:0.7rem;opacity:0.6;">{info_row.get('date', '')} · {info_row.get('location', '')}</div>
+                            <div style="font-size:0.7rem;color:#999;">{info_row.get('date', '')} · {info_row.get('location', '')}</div>
                         </div>""", unsafe_allow_html=True)
 
                 # statistical comparison bar chart — consistent metrics
@@ -137,7 +138,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                 display_cmp = comparison.fillna(0)
                 st.dataframe(display_cmp, use_container_width=True, hide_index=True)
 
-                # ── quarter by quarter analysis ──
+                # quarter by quarter analysis
                 st.markdown("---")
                 st.markdown('<h4 style="color:#232D4B;">Quarter by Quarter Analysis</h4>', unsafe_allow_html=True)
                 st.caption("Compare UVA's performance by quarter across the two selected games.")

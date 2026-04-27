@@ -1,16 +1,10 @@
-"""
-API Integrations module for LaxIQ — Milestone 3.
-Provides weather data (Open-Meteo) and NCAA lacrosse standings/news (TheSportsDB fallback).
-Demonstrates: caching with @st.cache_data(ttl=...), comprehensive error handling
-(401, 404, 429, 500, timeout, empty results), st.secrets for API key, input validation.
-"""
+# api_integrations.py - weather data (Open-Meteo) and team info (TheSportsDB)
 import streamlit as st
 import requests
 import time
 from datetime import datetime, date
 
-# ── API Configuration ──
-# Open-Meteo: forecast endpoint for future/current, archive endpoint for past dates
+# API endpoints
 OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
 OPEN_METEO_ARCHIVE  = "https://archive-api.open-meteo.com/v1/archive"
 # UVA Klöckner Stadium coordinates (Charlottesville, VA)
@@ -36,7 +30,7 @@ VENUE_COORDS = {
 
 
 class APIError(Exception):
-    """Custom exception for API errors with status code tracking."""
+    """Custom exception for API errors."""
     def __init__(self, message, status_code=None):
         self.message = message
         self.status_code = status_code
@@ -44,10 +38,7 @@ class APIError(Exception):
 
 
 def _handle_response(resp, api_name="API"):
-    """
-    Centralized HTTP response handler with specific error messages for
-    401, 404, 429, 500, and other status codes.
-    """
+    """Check the HTTP response and raise errors if needed."""
     if resp.status_code == 200:
         return resp.json()
     elif resp.status_code == 401:
@@ -62,25 +53,11 @@ def _handle_response(resp, api_name="API"):
         raise APIError(f"{api_name}: Unexpected HTTP {resp.status_code}.", resp.status_code)
 
 
-# ═══════════════════════════════════════════════
-#  WEATHER API  — Open-Meteo (free, no key)
-# ═══════════════════════════════════════════════
+# --- Weather API (Open-Meteo) ---
 
-@st.cache_data(ttl=1800, show_spinner=False)  # cache 30 min
+@st.cache_data(ttl=1800, show_spinner=False)
 def fetch_game_weather(location_name: str, game_date: str = None):
-    """
-    Fetch weather data for a game location.
-    Returns dict with temperature, conditions, wind, humidity etc.
-
-    Parameters
-    ----------
-    location_name : str
-        City name — must exist in VENUE_COORDS dict
-    game_date : str, optional
-        ISO date string (YYYY-MM-DD). If None, fetches current weather.
-
-    Error handling covers: timeout, connection error, HTTP errors, empty results.
-    """
+    """Fetch weather for a game location. Returns temp, wind, humidity, conditions."""
     # input validation
     if not location_name or not isinstance(location_name, str):
         return {"error": "Invalid location name.", "data": None}
@@ -99,8 +76,7 @@ def fetch_game_weather(location_name: str, game_date: str = None):
 
     lat, lon = coords
 
-    # determine if this is a historical or current/future request
-    # and parse the date from various formats (e.g., "3/14/2026", "2026-03-14")
+    # figure out if this is a past game or upcoming
     iso_date = None
     is_historical = False
     if game_date:
@@ -155,7 +131,7 @@ def fetch_game_weather(location_name: str, game_date: str = None):
     if not data:
         return {"error": "Empty response from weather API.", "data": None}
 
-    # WMO weather code → human description
+    # weather code lookup
     WMO_CODES = {
         0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
         45: "Fog", 48: "Rime fog", 51: "Light drizzle", 53: "Moderate drizzle",
@@ -202,19 +178,14 @@ def fetch_game_weather(location_name: str, game_date: str = None):
         return {"error": f"Error parsing weather data: {e}", "data": None}
 
 
-# ═══════════════════════════════════════════════
-#  NCAA LACROSSE STATS API  — TheSportsDB (free tier)
-# ═══════════════════════════════════════════════
+# --- Team Info API (TheSportsDB) ---
 
 SPORTSDB_BASE = "https://www.thesportsdb.com/api/v1/json"
 
-@st.cache_data(ttl=3600, show_spinner=False)  # cache 1 hour
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_team_info(team_name: str = "Virginia Cavaliers"):
-    """
-    Fetch team information from TheSportsDB free API.
-    Demonstrates: API key from st.secrets, error handling, caching.
-    """
-    # try to load API key from st.secrets, fall back to free tier key
+    """Look up basic team info from TheSportsDB."""
+    # load API key, default to free tier
     try:
         api_key = st.secrets.get("SPORTSDB_API_KEY", "3")  # "3" is the free-tier test key
     except Exception:
@@ -260,9 +231,7 @@ def fetch_team_info(team_name: str = "Virginia Cavaliers"):
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_past_events(team_id: str = None, team_name: str = "Virginia"):
-    """
-    Fetch recent past events/results for a team from TheSportsDB.
-    """
+    """Fetch recent results for a team."""
     try:
         api_key = st.secrets.get("SPORTSDB_API_KEY", "3")
     except Exception:
@@ -298,12 +267,10 @@ def fetch_past_events(team_id: str = None, team_name: str = "Virginia"):
     return {"error": None, "data": data}
 
 
-# ═══════════════════════════════════════════════
-#  RENDERING HELPERS
-# ═══════════════════════════════════════════════
+# --- UI rendering ---
 
 def render_weather_card(weather_data: dict):
-    """Render a weather info card in Streamlit."""
+    """Show the weather card on the page."""
     if not weather_data or weather_data.get("error"):
         st.warning(weather_data.get("error", "No weather data available."))
         return
@@ -355,7 +322,7 @@ def render_weather_card(weather_data: dict):
 
 
 def render_team_info_card(team_data: dict):
-    """Render team information card from TheSportsDB."""
+    """Show the team info card on the page."""
     if not team_data or team_data.get("error"):
         st.info(team_data.get("error", "No team data available."))
         return

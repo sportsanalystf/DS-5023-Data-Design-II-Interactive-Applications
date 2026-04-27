@@ -32,7 +32,7 @@ def render(sorted_players, all_data):
         st.warning("Need at least 2 players for comparison.")
     else:
         c1, c2 = st.columns(2)
-        # Milestone 3: on_change callback warns when same player is selected in both dropdowns
+        # warn if same player picked twice
         with c1: p1_sel = st.selectbox("Player 1", comp_options, index=0,
                                         key="compare_player_1", on_change=_warn_duplicate_player)
         with c2: p2_sel = st.selectbox("Player 2", comp_options, index=min(1, len(comp_options)-1),

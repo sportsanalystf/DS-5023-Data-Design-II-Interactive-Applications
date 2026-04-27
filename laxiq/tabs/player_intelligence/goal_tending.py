@@ -109,10 +109,10 @@ def render(all_data):
     josephson = all_data.get("Mel Josephson")
 
     # two sub-tabs: shot intelligence first, then GK comparison
-    # Milestone 3: widget key for sub-tab tracking
+    # sub-tab tracking
     gk_sub1, gk_sub2 = st.tabs(["🎯 Shot Intelligence (Finnelle)", "📊 GK Comparison"])
 
-    # ── sub-tab 1: shot intelligence ──
+    # sub-tab 1: shot intelligence
     with gk_sub1:
         ALL_SHOTS = _build_all_shots()
         shots_df = pd.DataFrame(ALL_SHOTS)
@@ -161,7 +161,7 @@ def render(all_data):
 
         st.markdown("---")
 
-        # ── goal zone heatmap (3x3 grid) ──
+        # goal zone heatmap
         st.markdown("### Goal Zone Analysis")
         hz1, hz2, hz3 = st.columns(3)
 
@@ -223,7 +223,7 @@ def render(all_data):
 
         st.markdown("---")
 
-        # ── saves vs goals by difficulty ──
+        # saves vs goals by difficulty
         st.markdown("### Performance by Difficulty")
         dd1, dd2 = st.columns(2)
 
@@ -271,7 +271,7 @@ def render(all_data):
 
         st.markdown("---")
 
-        # ── quarter breakdown ──
+        # quarter breakdown
         st.markdown("### Quarter Breakdown")
         q1, q2 = st.columns(2)
 
@@ -308,7 +308,7 @@ def render(all_data):
 
         st.markdown("---")
 
-        # ── save % by category ──
+        # save pct by category
         st.markdown("### Save % by Category")
         ct1, ct2, ct3 = st.columns(3)
 
@@ -343,7 +343,7 @@ def render(all_data):
 
         st.markdown("---")
 
-        # ── goals allowed breakdown ──
+        # goals allowed breakdown
         st.markdown("### Goals Allowed — How They Score")
         gd1, gd2 = st.columns(2)
 
@@ -406,7 +406,7 @@ def render(all_data):
             log_df.columns = ["#", "Game", "Qtr", "Result", "Shooter", "Field Zone", "Shot Type", "Situation", "Goal Zone", "Difficulty"]
             st.dataframe(log_df, use_container_width=True, hide_index=True, height=400)
 
-    # ── sub-tab 2: goalkeeper comparison ──
+    # sub-tab 2: goalkeeper comparison
     with gk_sub2:
         if finnelle and josephson:
             gk1, gk2 = st.columns(2)

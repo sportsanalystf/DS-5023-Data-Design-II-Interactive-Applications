@@ -1,8 +1,4 @@
-"""
-LaxIQ Assistant — Gemini-powered analytics chatbot for UVA Women's Lacrosse.
-Milestone 4: Full-page chat interface with persistent conversation,
-input validation, prompt injection defense, and loading feedback.
-"""
+# LaxIQ Assistant - chat page powered by Gemini
 
 import streamlit as st
 from style import CSS, UVA_BLUE, UVA_ORANGE
@@ -16,8 +12,6 @@ try:
 except ImportError:
     CHAT_AVAILABLE = False
 
-# ── Page config ──────────────────────────────────────────────────────
-
 st.set_page_config(
     page_title="LaxIQ Assistant",
     page_icon="🤖",
@@ -26,8 +20,7 @@ st.set_page_config(
 )
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ── Sidebar ──────────────────────────────────────────────────────────
-
+# sidebar
 with st.sidebar:
     import os, base64
     _logo_dir = os.path.dirname(os.path.dirname(__file__))
@@ -58,7 +51,6 @@ with st.sidebar:
         st.warning("Install google-generativeai to use chat")
         st.stop()
 
-    # Clear chat button (on_click callback — no st.rerun needed)
     st.button("🗑️ Clear Chat", on_click=clear_chat, key="clear_chat_btn",
               use_container_width=True, help="Clear all messages and start a new conversation")
 
@@ -66,8 +58,7 @@ with st.sidebar:
     st.caption("Powered by Google Gemini")
     st.caption("Ask me about UVA lacrosse stats, player performance, game breakdowns, and more.")
 
-# ── Custom CSS for chat ──────────────────────────────────────────────
-
+# chat page styles
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -85,24 +76,16 @@ st.markdown(f"""
 .chat-header .sub {{
     color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-top: 4px;
 }}
-.example-chip {{
-    display: inline-block; background: {UVA_BLUE}10;
-    border: 1px solid {UVA_BLUE}30; border-radius: 20px;
-    padding: 6px 14px; margin: 4px; font-size: 0.82rem;
-    color: {UVA_BLUE}; cursor: default;
-}}
 </style>
 """, unsafe_allow_html=True)
 
-# ── Header ───────────────────────────────────────────────────────────
-
+# header
 st.markdown("""<div class="chat-header">
     <h1>🤖 LaxIQ Assistant</h1>
     <div class="sub">AI-powered analytics assistant for UVA Women's Lacrosse · Ask about stats, players, games, and strategy</div>
 </div>""", unsafe_allow_html=True)
 
-# ── API key validation ───────────────────────────────────────────────
-
+# check API key
 if not validate_api_key():
     st.error(
         "⚠️ **Gemini API key not found.** "
@@ -111,13 +94,10 @@ if not validate_api_key():
     )
     st.stop()
 
-# ── Initialize message history ───────────────────────────────────────
-
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
-# ── Example prompts (shown when chat is empty) ───────────────────────
-
+# show example prompts when chat is empty
 if not st.session_state["messages"]:
     st.markdown("**Try asking:**")
     example_prompts = [
@@ -128,7 +108,6 @@ if not st.session_state["messages"]:
         "What does the Impact score measure?",
         "How does the draw control analysis work?",
     ]
-    # Clickable prompt chips using columns of buttons
     cols = st.columns(4)
     for i, prompt in enumerate(example_prompts):
         with cols[i % 4]:
@@ -136,7 +115,7 @@ if not st.session_state["messages"]:
                 st.session_state["_example_prompt"] = prompt
                 st.rerun()
 
-    # If an example prompt was clicked, inject it as user input
+    # handle clicked example prompt
     if "_example_prompt" in st.session_state:
         user_input = st.session_state.pop("_example_prompt")
         st.session_state["messages"].append({"role": "user", "content": user_input})
@@ -149,24 +128,21 @@ if not st.session_state["messages"]:
         st.session_state["messages"].append({"role": "assistant", "content": response_text})
         st.stop()
 
-# ── Render conversation history ──────────────────────────────────────
-# Messages persist across reruns; the full conversation re-renders every time.
-
+# show previous messages
 for msg in st.session_state["messages"]:
     with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else None):
         st.markdown(msg["content"])
 
-# ── Chat input ───────────────────────────────────────────────────────
-
+# chat input
 user_input = st.chat_input("Ask LaxIQ about UVA lacrosse...", key="chat_input")
 
 if user_input:
-    # ── Input validation: empty / whitespace ─────────────────────
+    # check for empty input
     if not user_input.strip():
         st.warning("⚠️ Please enter a question before sending.")
         st.stop()
 
-    # ── Input validation: very long prompts (>2000 chars) ────────
+    # check message length
     if len(user_input) > 2000:
         st.warning(
             f"⚠️ Your message is {len(user_input)} characters long (limit: 2000). "
@@ -174,14 +150,12 @@ if user_input:
         )
         st.stop()
 
-    # ── Prompt injection defense ─────────────────────────────────
+    # block injection attempts
     if check_prompt_injection(user_input):
-        # Display the user's message
         st.session_state["messages"].append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Respond with a firm but friendly redirect
         injection_response = (
             "I'm **LaxIQ**, and I specialize in UVA Women's Lacrosse analytics. "
             "I stay in character at all times and can't change my role or instructions. "
@@ -192,16 +166,15 @@ if user_input:
             st.markdown(injection_response)
         st.stop()
 
-    # ── Display user message ─────────────────────────────────────
+    # show user message
     st.session_state["messages"].append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # ── Call Gemini with spinner ─────────────────────────────────
+    # get response from Gemini
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("LaxIQ is analyzing..."):
             response_text = send_message(user_input)
         st.markdown(response_text)
 
-    # ── Save assistant response ──────────────────────────────────
     st.session_state["messages"].append({"role": "assistant", "content": response_text})

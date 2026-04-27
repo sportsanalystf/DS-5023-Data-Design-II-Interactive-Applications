@@ -37,7 +37,7 @@ st.markdown(f"""<style>
 # --- sidebar with game selector ---
 render_sidebar(show_game_selector=True)
 
-# Sidebar chat panel (Milestone 4)
+# sidebar chat
 try:
     from sidebar_chat import render_sidebar_chat
     render_sidebar_chat()
@@ -143,25 +143,22 @@ for col, cat in zip(g_cols, grade_cats):
         <div style="font-size:1.6rem;font-weight:700;color:{gc};">{g}</div>
     </div>""", unsafe_allow_html=True)
 
-# ── Milestone 3: API Integration — Weather & Team Info ──
-# Weather card for the game location — extract city from "Stadium, City, State" format
+# weather card for game location
 with st.spinner("Loading weather data..."):
     _loc_parts = [p.strip() for p in location.split(",")] if location else ["Charlottesville"]
-    # city is typically the second part: "Klockner Stadium, Charlottesville, Va."
     _loc = _loc_parts[1] if len(_loc_parts) >= 2 else _loc_parts[0]
     _weather = fetch_game_weather(_loc, game_date if game_date else None)
     render_weather_card(_weather)
 
-# Opponent team info from TheSportsDB — search with "Lacrosse" qualifier
+# opponent team info
 with st.spinner("Loading opponent info..."):
     _team_info = fetch_team_info(f"{opp}")
-    # Only show if the result is actually relevant (lacrosse or generic)
+    # only show if relevant
     if (_team_info and not _team_info.get("error")
             and _team_info.get("data", {}).get("sport", "").lower() in ("lacrosse", "")):
         render_team_info_card(_team_info)
 
-# --- tabs ---
-# Milestone 3: widget key enables programmatic tab tracking via st.session_state
+# tabs
 tab_wp, tab_players, tab_moments, tab_compare = st.tabs([
     "📈 Win Probability & WPA",
     "👤 Players & Team Stats",

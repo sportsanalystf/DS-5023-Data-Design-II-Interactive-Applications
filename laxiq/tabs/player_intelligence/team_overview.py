@@ -36,7 +36,7 @@ def render(filtered, sorted_players, all_data):
                        f"<div style='font-size:0.8rem;color:{UVA_BLUE};margin-top:8px;'>{'<br>'.join(tier_players[t])}</div>"
                        f"</div>", unsafe_allow_html=True)
 
-    # ── Milestone 3: Dynamic UI — hide advanced charts in Coach View ──
+    # hide advanced charts in Coach View
     _analyst_mode = st.session_state.get("view_mode", "Analyst View") == "Analyst View"
 
     if _analyst_mode:

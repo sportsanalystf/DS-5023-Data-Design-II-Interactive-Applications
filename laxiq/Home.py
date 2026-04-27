@@ -83,9 +83,9 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Sidebar ──
+# sidebar setup
 with st.sidebar:
-    # Virginia Athletics logo
+    # logo
     import os, base64
     _logo_dir = os.path.dirname(__file__)
     _logo_path = os.path.join(_logo_dir, "assets", "va_logo.png")
@@ -118,8 +118,7 @@ try:
 except Exception:
     pass  # chat unavailable if google-generativeai not installed
 
-# --- schedule data ---
-# hardcoded the full schedule since it doesn't change - scores updated after each game
+# season schedule
 
 SEASON_SCHEDULE = [
     {"date": "JAN 23", "day": "FRI", "opponent": "Johns Hopkins", "rank": "", "conf": "EXH", "ha": "vs", "location": "Severn, MD", "loc_type": "Neutral", "result": None, "uva_score": None, "opp_score": None, "note": "Exhibition", "uva_rank": ""},
@@ -148,7 +147,7 @@ SEASON_SCHEDULE = [
     {"date": "MAY 22-24", "day": "FRI-SUN", "opponent": "NCAA Final Four", "rank": "", "conf": "NCAA", "ha": "", "location": "Chicago, Ill.", "loc_type": "", "result": None, "uva_score": None, "opp_score": None, "note": "TBA", "uva_rank": ""},
 ]
 
-# --- season stats ---
+# calculate season stats
 
 played_games = [g for g in SEASON_SCHEDULE if g["result"] is not None]
 upcoming_games = [g for g in SEASON_SCHEDULE if g["result"] is None and g["note"] != "Exhibition"]
@@ -174,8 +173,7 @@ for g in reversed(played_games):
     else:
         break
 
-# --- advanced stats ---
-# pulls stats from all the game excel files and aggregates them
+# advanced statistics
 
 available_games = list_games()
 
@@ -283,9 +281,7 @@ def compute_season_advanced_stats():
 
 adv = compute_season_advanced_stats()
 
-# --- national rankings ---
-# these are from laxnumbers.com - have to update manually
-# TODO: automate pulling national rankings
+# national rankings
 
 NATIONAL_RANKS = {
     "offensive_efficiency": ("28.6%", "87th"),
@@ -298,7 +294,7 @@ NATIONAL_RANKS = {
     "strength_of_record":   ("-2.83", "55th"),
 }
 
-# --- hero banner ---
+# hero banner
 
 n_games = len(played_games)
 st.markdown(f"""<div class="hero-banner">
@@ -307,9 +303,7 @@ st.markdown(f"""<div class="hero-banner">
     <div class="record-badge">{wins}-{losses} ({conf_wins}-{conf_losses} ACC)</div>
 </div>""", unsafe_allow_html=True)
 
-# --- kpi cards ---
-
-# Use two rows of 4 for better responsiveness on smaller screens
+# kpi cards
 kpi_data = [
     (f"{wins}-{losses}", "Overall", "val-neg" if losses > wins else "val-pos"),
     (f".{int(win_pct * 1000):03d}", "PCT", ""),
@@ -324,7 +318,7 @@ cols = st.columns(len(kpi_data))
 for col, (val, label, cls) in zip(cols, kpi_data):
     col.markdown(metric_card(val, label, cls), unsafe_allow_html=True)
 
-# --- advanced metrics grid ---
+# advanced metrics
 
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;letter-spacing:1px;color:{UVA_ORANGE};margin:1.2rem 0 0.5rem 0;">Virginia ({wins} – {losses})</p>', unsafe_allow_html=True)
 
@@ -351,12 +345,12 @@ for row_metrics in [adv_metrics_row1, adv_metrics_row2]:
 <span class="amc-value">{val}</span>
 </div>""", unsafe_allow_html=True)
 
-# --- rankings table ---
+# rankings table
 
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;letter-spacing:1px;color:{UVA_BLUE};margin:1.5rem 0 0.3rem 0;">Team Rankings</p>', unsafe_allow_html=True)
 
 
-# helper to build the ranking table rows
+# build ranking rows
 def render_rank_rows(items):
     html = ""
     for label, value, rank in items:
@@ -364,13 +358,13 @@ def render_rank_rows(items):
     return html
 
 
-# ── Team section ──
+# team section
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_BLUE};text-align:center;margin:8px 0 4px 0;">Team</p>', unsafe_allow_html=True)
 tc1, tc2 = st.columns(2)
 tc1.markdown(render_rank_rows([("Winning Percentage", f"{adv.get('win_pct', 46.2)}%", "77th")]), unsafe_allow_html=True)
 tc2.markdown(render_rank_rows([("Scoring Margin", f"{adv.get('scoring_margin', 0.2)}", "71st")]), unsafe_allow_html=True)
 
-# ── Offense & Defense side by side ──
+# offense and defense
 off_col, def_col = st.columns(2)
 
 with off_col:
@@ -396,7 +390,7 @@ with def_col:
         ("SOG / Game",        str(adv.get("opp_sog_per_game", 18.2)),    "48th"),
     ]), unsafe_allow_html=True)
 
-# ── Possession Game ──
+# possession game
 st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_ORANGE};text-align:center;margin:12px 0 4px 0;">Possession Game</p>', unsafe_allow_html=True)
 pc1, pc2, pc3, pc4 = st.columns(4)
 pc1.markdown(render_rank_rows([("DC Win Rate", f"{adv.get('dc_win_rate', 57.7)}%", "34th")]), unsafe_allow_html=True)
@@ -407,7 +401,7 @@ pc4.markdown(render_rank_rows([("Ride Rate", f"{adv.get('ride_rate', 13.0)}%", "
 st.markdown('<p style="text-align:center;font-size:0.75rem;color:#999;margin-top:6px;font-style:italic;">If there are terms or concepts that are unfamiliar, a fuller explanation may be available in the glossary.</p>', unsafe_allow_html=True)
 
 
-# --- full schedule and results ---
+# full schedule and results
 
 st.markdown('<div class="section-label">Full Schedule & Results</div>', unsafe_allow_html=True)
 
@@ -434,7 +428,7 @@ for game in SEASON_SCHEDULE:
         badge_bg = UVA_ORANGE
         result_text = game["note"]
 
-    # Pre-match the game data for clickable rows
+    # match game data
     matched = None
     if has_data:
         opp_lower = opp.lower().strip()
@@ -446,7 +440,7 @@ for game in SEASON_SCHEDULE:
                 matched = ag
                 break
 
-    # Build matchup display string
+    # build matchup label
     matchup_parts = []
     if uva_rank:
         matchup_parts.append(uva_rank)
@@ -458,7 +452,7 @@ for game in SEASON_SCHEDULE:
         matchup_parts.append(conf_str.strip())
     matchup_label = " ".join(matchup_parts)
 
-    # Use st.columns for each game row
+    # display game row
     c_date, c_matchup, c_loc, c_result = st.columns([1.2, 4, 2.5, 1.5])
 
     with c_date:
@@ -471,14 +465,12 @@ for game in SEASON_SCHEDULE:
 
     with c_matchup:
         if matched:
-            # Make the entire matchup a clickable button
             if st.button(f"📊 {matchup_label}", key=f"nav_{game['date']}",
                          use_container_width=False, type="tertiary"):
                 st.session_state["selected_game"] = matched
                 st.session_state["selected_sheets"] = load_game(matched["file"])
                 st.switch_page("pages/1_Game_Analysis.py")
         else:
-            # Non-clickable — just display as text
             md_parts = []
             if uva_rank:
                 md_parts.append(f":gray[{uva_rank}]")
@@ -501,7 +493,7 @@ for game in SEASON_SCHEDULE:
     st.markdown("---")
 
 
-# --- next game banner ---
+# next game banner
 
 next_game = next((g for g in SEASON_SCHEDULE if g["result"] is None and g["note"] not in ("Exhibition", "TBA")), None)
 if next_game:

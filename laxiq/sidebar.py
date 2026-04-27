@@ -7,13 +7,9 @@ from style import UVA_ORANGE, UVA_BLUE
 
 
 def render_sidebar(show_game_selector=False):
-    """Sets up the sidebar with logo, nav links, and optional game selector.
-
-    If show_game_selector=True, loads game data into session state and returns game info.
-    Otherwise just shows the navigation.
-    """
+    """Render sidebar with logo, nav links, and optional game selector."""
     with st.sidebar:
-        # virginia athletics logo
+        # logo
         _logo_dir = os.path.dirname(__file__)
         _logo_path = os.path.join(_logo_dir, "assets", "va_logo.png")
         if os.path.exists(_logo_path):
@@ -47,7 +43,7 @@ def render_sidebar(show_game_selector=False):
                 st.error("No game data found in data/ folder.")
                 st.stop()
 
-            # pre-select from Home page navigation
+            # preselect from home page navigation
             pre_selected_idx = 0
             if "selected_game" in st.session_state:
                 for i, g in enumerate(games):
@@ -55,7 +51,7 @@ def render_sidebar(show_game_selector=False):
                         pre_selected_idx = i
                         break
 
-            # build labels with W/L prefix for clarity in the dropdown
+            # build game labels with W/L prefix
             game_labels = []
             for g in games:
                 r = g.get("result", "")
@@ -69,7 +65,7 @@ def render_sidebar(show_game_selector=False):
             st.session_state["selected_game"] = games[selected_idx]
             st.session_state["selected_sheets"] = load_game(games[selected_idx]["file"])
 
-            # visible selected-game indicator (failsafe for dropdown visibility)
+            # show selected game indicator
             sel_r = games[selected_idx].get("result", "")
             sel_badge_bg = "#2E7D32" if sel_r == "W" else "#C62828"
             sel_badge = "W" if sel_r == "W" else "L"

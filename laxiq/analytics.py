@@ -59,7 +59,7 @@ def get_year(name):
     return PLAYER_YEARS.get(name, "")
 
 
-# ==== data loading ====
+# data loading
 
 @st.cache_data(ttl=300)
 def list_games():
@@ -104,10 +104,23 @@ def load_game(filepath):
     xl = pd.ExcelFile(filepath)
     for name in xl.sheet_names:
         sheets[name] = pd.read_excel(filepath, sheet_name=name)
+
+    # fix swapped player sheets - some away game files have UVA/OPP reversed
+    if "UVA_Players" in sheets and "OPP_Players" in sheets:
+        uva_names = set(sheets["UVA_Players"]["Player"].dropna().tolist())
+        known_uva = set(POSITION_MAP.keys())
+        overlap = uva_names & known_uva
+        # if fewer than 3 known UVA players in UVA_Players sheet, they're probably swapped
+        if len(overlap) < 3:
+            opp_names = set(sheets["OPP_Players"]["Player"].dropna().tolist())
+            opp_overlap = opp_names & known_uva
+            if opp_overlap > overlap:
+                sheets["UVA_Players"], sheets["OPP_Players"] = sheets["OPP_Players"], sheets["UVA_Players"]
+
     return sheets
 
 
-# --- win probability model ---
+# win probability model
 
 def time_to_seconds(period, time_str):
     try:
@@ -123,7 +136,7 @@ def time_to_seconds(period, time_str):
         return None
 
 
-# logistic model - based on the approach from FiveThirtyEight articles
+# logistic model for win probability
 def win_probability(score_diff, seconds_remaining, total_seconds=3600):
     if seconds_remaining is None:
         return 0.5
@@ -134,7 +147,7 @@ def win_probability(score_diff, seconds_remaining, total_seconds=3600):
 
 
 def compute_wp_timeline(scoring_summary, home_team="Virginia"):
-    # computes WP at each goal
+    # compute win probability at each goal
     if scoring_summary.empty:
         return pd.DataFrame()
 
@@ -178,7 +191,7 @@ def compute_wp_timeline(scoring_summary, home_team="Virginia"):
 
 
 def compute_wpa(wp_timeline):
-    # calculate WPA per goal
+    # calculate win probability added per goal
     if wp_timeline.empty or len(wp_timeline) < 2:
         return pd.DataFrame()
 
@@ -202,10 +215,10 @@ def compute_wpa(wp_timeline):
     return pd.DataFrame(wpa_list)
 
 
-# --- scoring runs ---
+# scoring runs
 
 def detect_scoring_runs(scoring_summary, min_run=2):
-    # find streaks of consecutive goals by same team
+    # find consecutive goal streaks
     if scoring_summary.empty:
         return []
     runs = []
@@ -239,10 +252,10 @@ def detect_scoring_runs(scoring_summary, min_run=2):
     return runs
 
 
-# ==== play-by-play analysis ====
+# play-by-play analysis
 
 def classify_pbp_events(pbp_df):
-    # categorize PBP events
+    # classify events from play-by-play data
     if pbp_df.empty:
         return pbp_df
     df = pbp_df.copy()
@@ -274,10 +287,7 @@ def classify_pbp_events(pbp_df):
     df["Event_Type"] = np.select(conditions, choices, default="Other")
 
     def extract_team(play):
-        # this part is kind of messy but it works
-        # Use the beginning of the play (before score lines) for team ID
-        # Score lines look like "Virginia 5, Louisville 7"
-        # Truncate at "goal number" or first score-like pattern
+        # extract team from play text
         trunc = play
         for cutoff in [" goal number", " for season", ". Virginia ", ". virginia "]:
             idx = trunc.lower().find(cutoff)
@@ -286,12 +296,12 @@ def classify_pbp_events(pbp_df):
                 break
         play_upper = trunc.upper()
 
-        # Check Virginia first (but not Virginia Tech)
+        # check for team name patterns
         if "VIRGINIA TECH" in play_upper or " VT " in play_upper:
             return "Virginia Tech"
         if "VIRGINIA" in play_upper:
             return "Virginia"
-        # Common opponent names/abbreviations in PBP text
+        # opponent patterns
         opp_patterns = [
             (r'\bLOU\b|LOUISVILLE', "Louisville"),
             (r'JAMES MA|JMU', "James Madison"),
@@ -340,7 +350,7 @@ def classify_pbp_events(pbp_df):
 
 
 def compute_pbp_summary(pbp_classified, home_team="Virginia"):
-    # summary stats from PBP
+    # compute summary stats from play-by-play
     if pbp_classified.empty:
         return {}
     df = pbp_classified
@@ -365,7 +375,7 @@ def compute_pbp_summary(pbp_classified, home_team="Virginia"):
     return summary
 
 
-# --- player analysis ---
+# player analysis
 
 def compute_player_efficiency(player_df):
     # compute efficiency metrics
@@ -382,7 +392,7 @@ def compute_player_efficiency(player_df):
 
 
 def aggregate_player_stats(game_list, team="uva"):
-    # combine player stats from multiple games
+    # aggregate player stats across games
     all_players = []
     for game in game_list:
         sheets = load_game(game["file"])
@@ -400,7 +410,7 @@ def aggregate_player_stats(game_list, team="uva"):
 
 
 def player_season_totals(multi_game_df):
-    # aggregate to season totals
+    # compute season totals for players
     if multi_game_df.empty:
         return pd.DataFrame()
     numeric_cols = ["G", "A", "PTS", "SH", "SOG", "GB", "DC", "TO", "CT"]
@@ -412,10 +422,10 @@ def player_season_totals(multi_game_df):
     return totals
 
 
-# --- radar scores & tier system ---
+# radar scores and tier system
 
 def compute_radar_scores(season_totals, multi_game_df=None):
-    # computes 5-dimension radar scores (offense, defense, possession, efficiency, discipline) and tier
+    # compute radar scores and tier assignments
     if season_totals.empty:
         return {}
 
@@ -426,8 +436,6 @@ def compute_radar_scores(season_totals, multi_game_df=None):
     active = df[df["Games"] >= 1]
     if active.empty:
         return {}
-    # TODO: would be nice to load these thresholds from a CSV instead of hardcoding
-
     max_gpg = max(0.001, float((active["G"] / active["Games"].clip(lower=1)).max()))
     max_ppg = max(0.001, float((active["PTS"] / active["Games"].clip(lower=1)).max()))
     max_apg = max(0.001, float((active["A"] / active["Games"].clip(lower=1)).max()))
@@ -437,13 +445,13 @@ def compute_radar_scores(season_totals, multi_game_df=None):
     max_poss = max(0.001, float((active["GB"] + active["DC"] + active["CT"] - active["TO"]).max()))
 
     def norm(v, mx, inv=False):
-        # simple 0-100 normalization
+        # normalize to 0-100 scale
         if mx == 0:
             return 50
         r = min(v / mx, 1.5) / 1.5 * 100
         return 100 - r if inv else r
 
-    # Per-game data for consistency calculation
+    # game-by-game data for consistency
     game_data = {}
     if multi_game_df is not None and not multi_game_df.empty:
         for name, group in multi_game_df.groupby("Player"):
@@ -467,11 +475,10 @@ def compute_radar_scores(season_totals, multi_game_df=None):
         poss_impact = row["GB"] + row["DC"] + row["CT"] - row["TO"]
         sh_pct = row.get("Shot_Pct", 0) or 0
 
-        # Discipline: cards penalty (estimate from TO patterns)
-        # Without explicit card data in season totals, use TO as proxy
+        # discipline estimate
         discipline_penalty = 0  # Would add YC*3 + GC*1 if we had card data
 
-        # Consistency from game-by-game data
+        # consistency calculation
         consistency = 0.5
         if name in game_data:
             gpts = game_data[name]["game_pts"]
@@ -484,7 +491,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
             else:
                 consistency = 0.5
 
-        # 5 radar dimensions
+        # compute dimensions
         offensive = min(100, norm(gpg, max_gpg) * 0.35 + norm(sh_pct, 75) * 0.25 +
                         norm(ppg, max_ppg) * 0.25 + norm(apg, max_apg) * 0.15)
         defensive = min(100, norm(ctpg, max_ctpg) * 0.45 + norm(gbpg, max_gbpg) * 0.35 +
@@ -495,7 +502,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
                          norm(to_rate, 1, inv=True) * 0.25 + norm(consistency, 1) * 0.20)
         discipline = max(0, 100 - discipline_penalty * 12)
 
-        # Position-weighted overall
+        # position-weighted score
         weights = {
             "A": {"o": 0.40, "d": 0.05, "p": 0.15, "e": 0.30, "di": 0.10},
             "M": {"o": 0.25, "d": 0.20, "p": 0.25, "e": 0.20, "di": 0.10},
@@ -507,11 +514,10 @@ def compute_radar_scores(season_totals, multi_game_df=None):
                    possession * weights["p"] + efficiency * weights["e"] +
                    discipline * weights["di"])
 
-        # Tier assignment
-        # NOTE: thresholds (65, 45, 25) tuned by looking at D1 averages
+        # tier assignment
         tier = 1 if overall >= 65 else (2 if overall >= 45 else (3 if overall >= 25 else 4))
 
-        # Flags
+        # development flags
         flags = []
         if row["TO"] / gp >= 2 and row["PTS"] > 0:
             flags.append(("High Turnover Risk", "negative"))
@@ -532,7 +538,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
         if apg >= 2:
             flags.append(("Elite Playmaker", "positive"))
 
-        # Coaching recommendations
+        # recommendations
         recs = generate_recommendations(name, pos, row, gp, sh_pct, ctpg, gbpg, dcpg, to_rate, tier)
 
         results[name] = {
@@ -558,7 +564,7 @@ def compute_radar_scores(season_totals, multi_game_df=None):
 
 
 def generate_recommendations(name, pos, row, gp, sh_pct, ctpg, gbpg, dcpg, to_rate, tier):
-    # coaching recommendations based on stats and position
+    # generate coaching recommendations
     recs = []
     if pos == "A":
         if sh_pct < 35 and row["SH"] >= 10:
@@ -596,10 +602,10 @@ def generate_recommendations(name, pos, row, gp, sh_pct, ctpg, gbpg, dcpg, to_ra
     return recs
 
 
-# --- quarter momentum analysis ---
+# quarter momentum analysis
 
 def compute_quarter_momentum(score_qoq, home_team="Virginia"):
-    # quarter-by-quarter momentum
+    # compute momentum by quarter
     if score_qoq.empty:
         return pd.DataFrame()
     home = score_qoq[score_qoq["Team"].str.contains(home_team, case=False)]
@@ -619,10 +625,10 @@ def compute_quarter_momentum(score_qoq, home_team="Virginia"):
     return pd.DataFrame(quarters)
 
 
-# --- play type impact analysis ---
+# play type impact analysis
 
 def compute_play_type_impact(scoring_summary, wpa_df, penalties_df, home_team="Virginia"):
-    # WPA impact by play type
+    # compute win probability added by play type
     if wpa_df.empty:
         return pd.DataFrame()
     impacts = []
@@ -643,10 +649,10 @@ def compute_play_type_impact(scoring_summary, wpa_df, penalties_df, home_team="V
     return pd.DataFrame(impacts).sort_values("WPA") if impacts else pd.DataFrame()
 
 
-# --- draw control analytics ---
+# draw control analytics
 
 def compute_draw_control_stats(season_totals, multi_game_df=None):
-    # draw control stats
+    # compute draw control statistics
     if season_totals.empty:
         return {}
 
@@ -667,7 +673,7 @@ def compute_draw_control_stats(season_totals, multi_game_df=None):
         "total_gb": int(season_totals["GB"].sum()),
     }
 
-    # Per-game trend for primary specialist
+    # game-by-game trend
     if multi_game_df is not None and not multi_game_df.empty:
         primary_games = multi_game_df[multi_game_df["Player"] == primary]
         if not primary_games.empty:
@@ -676,10 +682,10 @@ def compute_draw_control_stats(season_totals, multi_game_df=None):
     return stats
 
 
-# --- game comparison ---
+# game comparison
 
 def compare_games(game_a_sheets, game_b_sheets):
-    # compare metrics between two games
+    # compare game statistics
     comparisons = []
     for label, sheets in [("Game A", game_a_sheets), ("Game B", game_b_sheets)]:
         info = sheets["Game_Info"].iloc[0]
@@ -695,7 +701,7 @@ def compare_games(game_a_sheets, game_b_sheets):
                 return default
 
         def _stat_total(category):
-            """Extract UVA total for a stat category, handling string formats like '15-17'."""
+            # extract stat total for category
             if stats.empty:
                 return 0
             uva_row = stats[(stats["Category"] == category)
@@ -736,10 +742,10 @@ def compare_games(game_a_sheets, game_b_sheets):
     return pd.DataFrame(comparisons)
 
 
-# --- turnover analysis ---
+# turnover analysis
 
 def compute_turnover_analysis(pbp_classified, home_team="Virginia"):
-    # turnovers by player and quarter
+    # compute turnovers by player and quarter
     if pbp_classified.empty:
         return pd.DataFrame()
 
@@ -751,7 +757,7 @@ def compute_turnover_analysis(pbp_classified, home_team="Virginia"):
     if tos.empty:
         return pd.DataFrame()
 
-    # Group by player and quarter
+    # group by player and quarter
     tos["Quarter"] = "Q" + tos["Period"].astype(str)
     pivot = tos.pivot_table(index="Event_Player", columns="Quarter",
                             values="Play", aggfunc="count", fill_value=0)
@@ -761,10 +767,8 @@ def compute_turnover_analysis(pbp_classified, home_team="Virginia"):
     return pivot
 
 
-# --- full win probability timeline (all play types) ---
+# win probability timeline constants
 
-# WP momentum deltas by event type (positive = favors the event team)
-# TODO: these deltas could be learned from actual game data instead of hardcoded
 EVENT_WP_DELTAS = {
     "Goal":               0.0,   # handled by logistic model via score change
     "Draw Control":       1.4,
@@ -786,10 +790,10 @@ EVENT_WP_DELTAS = {
 
 def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                    home_team="Virginia", away_team="Opponent"):
-    # build play-by-play from box score data when full PBP unavailable
+    # synthesize play-by-play from box score data
     rows = []
 
-    # Parse quarter stats
+    # parse quarter statistics
     q_stats = {}  # {quarter: {category: {team: count}}}
     if stats_qoq is not None and not stats_qoq.empty:
         for q in [1, 2, 3, 4]:
@@ -807,7 +811,7 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                 is_home = home_team.lower() in team.lower()
                 q_stats[q][cat]["home" if is_home else "away"] = val
 
-    # Build goal events from scoring summary (these have real timestamps)
+    # build goal events
     goals_by_q = {1: [], 2: [], 3: [], 4: []}
     if scoring_summary is not None and not scoring_summary.empty:
         for _, r in scoring_summary.iterrows():
@@ -821,7 +825,7 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
             if period in goals_by_q:
                 goals_by_q[period].append({"Period": period, "Time": time_str, "Play": play})
 
-    # Map stat categories to event play text
+    # map categories to play events
     event_map = {
         "Shots": ("Shot by {TEAM} Player.", "Shot"),
         "Saves": ("SAVE by {TEAM} Goalkeeper.", "Save"),
@@ -834,11 +838,11 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
     for q in [1, 2, 3, 4]:
         events_this_q = []
 
-        # Add goal events
+        # add goal events
         for ge in goals_by_q.get(q, []):
             events_this_q.append(ge)
 
-        # Add non-goal events from stats
+        # add non-goal events
         if q in q_stats:
             for cat, emap in event_map.items():
                 template, _ = emap
@@ -846,7 +850,7 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                     for side in ["home", "away"]:
                         count = q_stats[q][cat].get(side, 0)
                         team_name = home_team if side == "home" else away_team
-                        # Subtract goals from shots (goals are already counted)
+                        # subtract goals from shots
                         if cat == "Shots":
                             n_goals = len([g for g in goals_by_q.get(q, [])
                                           if (home_team.upper() in g["Play"]) == (side == "home")])
@@ -855,19 +859,18 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                             play = template.replace("{TEAM}", team_name.upper())
                             events_this_q.append({"Period": q, "Time": None, "Play": play})
 
-        # Distribute events within the quarter
-        # Goals have real times; other events get spread around them
+        # distribute events in quarter
         n_events = len(events_this_q)
         if n_events > 0:
             q_start_secs = (4 - q) * 900 + 900  # e.g. Q1 = 3600
             q_end_secs = (4 - q) * 900 + 10
             time_slots = np.linspace(q_start_secs, q_end_secs, n_events + 2)[1:-1]
 
-            # Sort: goals with real times first (at their real positions), rest fill gaps
+            # sort events by time
             goals_with_time = [e for e in events_this_q if e["Time"] and e["Time"] != "nan"]
             non_goals = [e for e in events_this_q if not e["Time"] or e["Time"] == "nan"]
 
-            # Place goals at their real time positions
+            # place goals
             for ge in goals_with_time:
                 try:
                     parts = ge["Time"].split(":")
@@ -876,12 +879,12 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                 except:
                     ge["_secs"] = q_start_secs - 450
 
-            # Sort non-goals randomly and assign remaining time slots
+            # shuffle non-goals
             import random
-            random.seed(q)  # deterministic
+            random.seed(q)
             random.shuffle(non_goals)
 
-            # Merge: put all events together sorted by time
+            # merge events
             all_events = []
             for ge in goals_with_time:
                 secs = ge["_secs"]
@@ -890,7 +893,7 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
                 all_events.append({"Period": q, "Time": f"{mm:02d}:{ss:02d}", "Play": ge["Play"],
                                    "_secs": secs})
 
-            # Assign times to non-goals in the remaining gaps
+            # assign times to non-goals
             used_secs = set(ge.get("_secs", 0) for ge in goals_with_time)
             available_slots = [s for s in time_slots if s not in used_secs]
             for i, ng in enumerate(non_goals):
@@ -911,13 +914,13 @@ def synthesize_pbp(scoring_summary, stats_qoq, uva_players, opp_players,
 
 
 def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
-    # builds the full WP timeline including non-goal events
+    # compute full win probability timeline
     if pbp_df.empty:
         return pd.DataFrame()
 
     classified = classify_pbp_events(pbp_df.copy())
 
-    # ── 0. Fix period numbering if all events are in Period 1 ─────
+    # fix period numbering
     if classified["Period"].nunique() == 1:
         # Detect period boundaries from "End-of-period" markers or time resets
         current_period = 1
@@ -929,7 +932,7 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
                 if current_period < 4:
                     current_period += 1
         classified["Period"] = periods
-        # If we still only found 1 period, try time-based detection
+        # try time-based period detection
         if classified["Period"].nunique() == 1:
             times = pd.to_numeric(classified["Time"].astype(str).str.split(":").str[0], errors="coerce")
             resets = (times.diff() > 5) & times.notna()
@@ -941,7 +944,7 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
                 periods.append(current_period)
             classified["Period"] = periods
 
-    # ── 1. Build goal lookup: Period+Time → cumulative score ──────
+    # build goal lookup
     goal_events = []
     h_score, a_score = 0, 0
     if scoring_summary is not None and not scoring_summary.empty:
@@ -961,13 +964,13 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
                 "Is_ManUp": row.get("Is_ManUp", False),
             })
 
-    # ── 2. Interpolate missing times ─────────────────────────────
+    # interpolate missing times
     df = classified.copy()
     df["Time_str"] = df["Time"].astype(str).str.strip()
     df.loc[df["Time_str"].isin(["", "nan", "None", "--:--"]), "Time_str"] = None
 
     def _clock_to_secs(period, time_str):
-        """Convert period + clock to seconds remaining in the game."""
+        # convert clock time to seconds
         try:
             parts = str(time_str).split(":")
             mins, secs = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
@@ -978,53 +981,45 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
             return None
 
     def _secs_to_clock(secs_remaining):
-        """Convert seconds remaining to clock string for the current period."""
+        # convert seconds to clock time
         period_secs = secs_remaining % 900
         mm = period_secs // 60
         ss = period_secs % 60
         return f"{mm:02d}:{ss:02d}"
 
-    # Compute seconds remaining where time is known
+    # compute seconds
     df["Secs_Remaining"] = df.apply(
         lambda r: _clock_to_secs(r["Period"], r["Time_str"]) if r["Time_str"] else None,
         axis=1
     )
-    # Ensure numeric dtype so interpolation works
     df["Secs_Remaining"] = pd.to_numeric(df["Secs_Remaining"], errors="coerce")
 
-    # Forward/backward fill missing times within each period
-    # Events are ordered chronologically, so interpolate linearly
+    # fill missing times
     for period in df["Period"].unique():
         mask = df["Period"] == period
         period_df = df.loc[mask, "Secs_Remaining"].copy()
         n_known = period_df.notna().sum()
 
         if n_known >= 2:
-            # Some timestamps known — interpolate between them
             df.loc[mask, "Secs_Remaining"] = (
                 period_df.interpolate(method="linear")
                          .ffill().bfill()
             )
         elif n_known == 1:
-            # Only one timestamp known — spread around it
             df.loc[mask, "Secs_Remaining"] = period_df.ffill().bfill()
         else:
-            # NO timestamps at all — spread events evenly across the quarter
-            # Quarter runs from 15:00 down to 0:01 (in secs_remaining terms)
+            # spread events evenly
             p = int(period)
-            q_start = (4 - p) * 900 + 900  # top of quarter (e.g. Q1 = 3600)
-            q_end = (4 - p) * 900 + 10     # near bottom (small buffer)
+            q_start = (4 - p) * 900 + 900
+            q_end = (4 - p) * 900 + 10
             n_events = mask.sum()
             if n_events > 1:
                 spread = np.linspace(q_start, q_end, n_events)
             else:
-                spread = np.array([q_start - 450])  # midpoint
+                spread = np.array([q_start - 450])
             df.loc[mask, "Secs_Remaining"] = spread
 
-    # Ensure numeric
-    df["Secs_Remaining"] = pd.to_numeric(df["Secs_Remaining"], errors="coerce")
-
-    # Final fallback: if somehow still NaN
+    # final fallback
     for period in df["Period"].unique():
         mask = (df["Period"] == period) & df["Secs_Remaining"].isna()
         if mask.any():
@@ -1033,14 +1028,14 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
 
     df["Secs_Remaining"] = df["Secs_Remaining"].astype(float)
 
-    # ── 3. Build the full timeline ────────────────────────────────
+    # build timeline
     events = []
     home_score, away_score = 0, 0
     goal_idx = 0
-    momentum = 0.0  # running momentum modifier
-    DECAY = 0.82    # tuned these by trial and error
+    momentum = 0.0
+    DECAY = 0.82
 
-    # Game Start event
+    # game start
     events.append({
         "Event_Num": 0,
         "Period": 1, "Time": "15:00",
@@ -1062,11 +1057,10 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
         if etype == "Other":
             continue  # skip end-of-period, etc.
 
-        # Determine if this event belongs to the home team
+        # determine team
         if eteam:
             is_home = home_team.lower() in str(eteam).lower()
         else:
-            # If team extraction failed, try to infer from play text
             play_upper = play_text.upper()
             if "VIRGINIA TECH" in play_upper or " VT " in play_upper:
                 is_home = False
@@ -1080,43 +1074,36 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
             else:
                 is_home = None
 
-        # Handle goals: update score from scoring_summary and compute real WPA
+        # handle goals
         goal_delta = None
         if etype == "Goal" and goal_idx < len(goal_events):
             ge = goal_events[goal_idx]
-            # WP before the goal (old score)
             old_diff = home_score - away_score
             wp_before = win_probability(old_diff, secs) * 100
-            # Update score
             home_score = ge["Home_Score"]
             away_score = ge["Away_Score"]
             goal_idx += 1
-            # WP after the goal (new score)
             new_diff = home_score - away_score
             wp_after = win_probability(new_diff, secs) * 100
-            # Goal delta is the actual WP swing from the score change
             goal_delta = wp_after - wp_before
-            momentum *= 0.5  # reset some momentum on goals
+            momentum *= 0.5
 
         score_diff = home_score - away_score
 
         # Base WP from logistic model
         base_wp = win_probability(score_diff, secs) * 100
 
-        # Compute event delta
+        # compute delta
         if goal_delta is not None:
-            # For goals, use the real WP shift from the score change
             delta = goal_delta
         elif is_home is not None:
             raw_delta = EVENT_WP_DELTAS.get(etype, 0.0)
             if raw_delta == 0:
                 delta = 0.0
             else:
-                # Adjust delta sign based on team and event semantics
                 play_upper = play_text.upper()
 
                 if etype == "Turnover":
-                    # Turnover is BAD for the team that committed it
                     delta = raw_delta if is_home else -raw_delta
 
                 elif etype == "Clear":
@@ -1126,18 +1113,15 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
                         delta = abs(raw_delta) if is_home else -abs(raw_delta)
 
                 elif etype == "Card" or etype == "Foul":
-                    # Card/foul ON a team is bad for that team
                     delta = raw_delta if is_home else -raw_delta
 
                 elif etype == "Shot":
-                    # Shot attempt is slightly positive for the shooting team
                     if "SAVE" in play_upper:
                         delta = -abs(raw_delta) if is_home else abs(raw_delta)
                     else:
                         delta = abs(raw_delta) if is_home else -abs(raw_delta)
 
                 else:
-                    # Draw Control, Ground Ball, Save, Free Position = good for event team
                     delta = abs(raw_delta) if is_home else -abs(raw_delta)
         else:
             delta = 0.0
@@ -1148,7 +1132,7 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
         # Final WP = base + momentum, clamped
         wp = np.clip(base_wp + momentum, 0.5, 99.5)
 
-        # Extract detail strings for hover
+        # extract details
         shot_detail = ""
         if etype == "Shot":
             for tag in ["WIDE", "HIGH", "BLOCKED", "SAVE", "HIT POST"]:
@@ -1188,7 +1172,7 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
             "TO_Detail": to_detail,
         })
 
-    # Game End event
+    # game end
     final_wp = events[-1]["WP"] if events else 50.0
     result_wp = 99.5 if home_score > away_score else (0.5 if home_score < away_score else 50.0)
     events.append({
@@ -1207,10 +1191,10 @@ def compute_full_wp_timeline(pbp_df, scoring_summary, home_team="Virginia"):
     return pd.DataFrame(events)
 
 
-# --- game performance grading system ---
+# game performance grading system
 
 def grade_color(grade):
-    # hex colors for letter grades
+    # map grades to colors
     if grade.startswith("A"):
         return "#2E7D32"  # green
     elif grade.startswith("B"):
@@ -1224,7 +1208,7 @@ def grade_color(grade):
 
 
 def _score_to_grade(score):
-    """Convert numeric score (0-100) to letter grade."""
+    # convert score to letter grade
     try:
         s = float(score)
         if s >= 93:
@@ -1254,14 +1238,7 @@ def _score_to_grade(score):
 
 
 def compute_game_grades(sheets, home_team="Virginia"):
-    """Compute letter grades for 6 game performance categories.
-
-    Calibrated for D1 women's lacrosse norms:
-      - Avg goals/game ≈ 10-12, avg save rate ≈ 40-50%, avg DCs ≈ 10-12
-    Uses Game_Info score as primary (more reliable than player stat sums).
-
-    Returns dict like {"Offense": "A-", "Defense": "B", ...}
-    """
+    # compute letter grades for game performance
     grades = {}
 
     def _safe(val, default=0):
@@ -1275,22 +1252,18 @@ def compute_game_grades(sheets, home_team="Virginia"):
     uva_players = sheets.get("UVA_Players", pd.DataFrame())
     opp_players = sheets.get("OPP_Players", pd.DataFrame())
 
-    # Use Game_Info score as authoritative source
+    # use game info as source
     home_goals = _safe(info.iloc[0].get("home_score", 0)) if not info.empty else 0
     away_goals = _safe(info.iloc[0].get("away_score", 0)) if not info.empty else 0
 
-    # ── OFFENSE ───────────────────────────────────────────────
-    # 15+ goals = A+, 12-14 = A/A-, 10-11 = B+/B, 8-9 = C+/C, 6-7 = D, <6 = F
+    # offense
     try:
         goals = home_goals
         shots = _safe(uva_players["SH"].sum()) if not uva_players.empty else 0
         sog = _safe(uva_players["SOG"].sum()) if not uva_players.empty else 0
 
-        # Goal volume (60%): piecewise — 5→40, 8→65, 10→78, 12→88, 15→98
         goal_score = min(100, 20 + goals * 5.2)
-        # Shot efficiency (20%): SOG/SH typical 50-75%
         eff_score = min(100, (sog / shots * 120)) if shots > 0 else 60
-        # Goal conversion (20%): G/SH typical 25-50%
         conv_score = min(100, (goals / shots * 220)) if shots > 0 else 50
 
         offense_score = goal_score * 0.60 + eff_score * 0.20 + conv_score * 0.20
@@ -1298,18 +1271,14 @@ def compute_game_grades(sheets, home_team="Virginia"):
     except Exception:
         grades["Offense"] = "N/A"
 
-    # ── DEFENSE ───────────────────────────────────────────────
-    # <7 opp goals = A, 8-9 = B, 10-11 = C, 12-13 = D, 14+ = F
+    # defense
     try:
         opp_g = away_goals
         ct = _safe(uva_players["CT"].sum()) if not uva_players.empty else 0
         gb = _safe(uva_players["GB"].sum()) if not uva_players.empty else 0
 
-        # Goals allowed (55%): 6→96, 8→84, 10→72, 12→60, 15→42
         ga_score = max(0, min(100, 132 - opp_g * 6))
-        # Caused turnovers (25%): 5→55, 8→75, 10→85, 12→95
         ct_score = min(100, 30 + ct * 6)
-        # Ground balls (20%): 8→60, 12→78, 16→96
         gb_score = min(100, 25 + gb * 4.5)
 
         defense_score = ga_score * 0.55 + ct_score * 0.25 + gb_score * 0.20
@@ -1317,14 +1286,12 @@ def compute_game_grades(sheets, home_team="Virginia"):
     except Exception:
         grades["Defense"] = "N/A"
 
-    # ── TRANSITION (turnovers + margin) ───────────────────────
+    # transition
     try:
         uva_tos = _safe(uva_players["TO"].sum()) if not uva_players.empty else 12
         opp_tos = _safe(opp_players["TO"].sum()) if not opp_players.empty else 12
 
-        # Lower UVA turnovers = better: 6→96, 10→78, 14→60, 18→42
         to_score = max(0, min(100, 123 - uva_tos * 4.5))
-        # TO differential: winning battle is bonus
         to_diff = opp_tos - uva_tos  # positive = good
         diff_bonus = min(15, max(-15, to_diff * 3))
 
@@ -1333,18 +1300,15 @@ def compute_game_grades(sheets, home_team="Virginia"):
     except Exception:
         grades["Transition"] = "N/A"
 
-    # ── DRAW UNIT ─────────────────────────────────────────────
-    # 18+ = A+, 14-17 = A/A-, 10-13 = B, 7-9 = C, <7 = D/F
+    # draw unit
     try:
         dc = _safe(uva_players["DC"].sum()) if not uva_players.empty else 0
-        # Piecewise: 5→50, 8→66, 10→77, 13→93, 15→100
         draw_score = min(100, 25 + dc * 5.3)
         grades["Draw Unit"] = _score_to_grade(draw_score)
     except Exception:
         grades["Draw Unit"] = "N/A"
 
-    # ── GOALKEEPING ───────────────────────────────────────────
-    # Save% in WLAX: 55%+ elite, 45-50% good, 35-45% avg, <35% poor
+    # goalkeeping
     try:
         gk = sheets.get("Goalkeepers", pd.DataFrame())
         if not gk.empty and "Saves" in gk.columns and "GA" in gk.columns:
@@ -1352,8 +1316,7 @@ def compute_game_grades(sheets, home_team="Virginia"):
             ga = _safe(gk["GA"].sum())
             total = saves + ga
             if total > 0:
-                save_pct = saves / total  # 0.30-0.55 typical
-                # Scale so: 55%→95, 45%→78, 35%→60, 25%→42
+                save_pct = saves / total
                 gk_score = max(0, min(100, save_pct * 175 - 1.5))
                 grades["Goalkeeping"] = _score_to_grade(gk_score)
             else:
@@ -1363,7 +1326,7 @@ def compute_game_grades(sheets, home_team="Virginia"):
     except Exception:
         grades["Goalkeeping"] = "N/A"
 
-    # ── DISCIPLINE ────────────────────────────────────────────
+    # discipline
     try:
         pens = sheets.get("Penalty_Summary", pd.DataFrame())
         if pens is not None and not pens.empty and "Team" in pens.columns:

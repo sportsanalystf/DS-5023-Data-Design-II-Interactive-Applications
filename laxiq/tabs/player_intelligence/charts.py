@@ -15,7 +15,7 @@ from style import (UVA_BLUE, UVA_ORANGE, UVA_BLUE_25, UVA_ORANGE_25,
 
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor=WHITE,
     font=dict(family="DM Sans", color=UVA_BLUE),
     margin=dict(l=30, r=30, t=40, b=30),
 )

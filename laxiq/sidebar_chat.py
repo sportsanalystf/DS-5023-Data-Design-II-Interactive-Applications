@@ -1,8 +1,4 @@
-"""
-sidebar_chat.py — Compact sidebar chat panel for LaxIQ assistant.
-Call render_sidebar_chat() from any page to add a mini chat in the sidebar.
-Shares the same st.session_state["messages"] as the full assistant page.
-"""
+# sidebar chat panel
 
 import streamlit as st
 from gemini_chat import validate_api_key, send_message, clear_chat, check_prompt_injection
@@ -10,7 +6,7 @@ from style import UVA_BLUE, UVA_ORANGE
 
 
 def render_sidebar_chat():
-    """Render a compact LaxIQ chat panel inside st.sidebar."""
+    """Render chat panel in sidebar."""
     with st.sidebar:
         st.markdown(
             f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;'
@@ -23,16 +19,16 @@ def render_sidebar_chat():
             st.caption("⚠️ Add GEMINI_API_KEY to secrets.toml")
             return
 
-        # Initialize messages if needed
+        # initialize messages
         if "messages" not in st.session_state:
             st.session_state["messages"] = []
 
-        # Show last 3 messages in sidebar (compact view)
+        # show recent messages
         recent = st.session_state["messages"][-6:]  # last 3 exchanges
         if recent:
             for msg in recent:
                 role_icon = "🤖" if msg["role"] == "assistant" else "👤"
-                # Truncate long messages for sidebar
+                # truncate long messages
                 text = msg["content"][:200] + "..." if len(msg["content"]) > 200 else msg["content"]
                 st.markdown(
                     f'<div style="font-size:0.78rem;padding:4px 8px;margin:2px 0;'
@@ -42,7 +38,7 @@ def render_sidebar_chat():
                     unsafe_allow_html=True,
                 )
 
-        # Sidebar input
+        # input field
         sidebar_input = st.text_input(
             "Quick question",
             key="sidebar_chat_input",
@@ -58,7 +54,7 @@ def render_sidebar_chat():
                        help="Clear chat")
 
         if send_btn and sidebar_input and sidebar_input.strip():
-            # Input validation
+            # validate input
             if len(sidebar_input) > 2000:
                 st.warning("Message too long (max 2000 chars)")
                 return
@@ -77,6 +73,6 @@ def render_sidebar_chat():
             st.session_state["messages"].append({"role": "assistant", "content": rsp})
             st.rerun()
 
-        # Link to full page
+        # link to full chat
         st.page_link("pages/3_LaxIQ_Assistant.py", label="Open full chat →",
                       icon="💬")

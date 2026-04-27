@@ -128,11 +128,26 @@ if not st.session_state["messages"]:
         "What does the Impact score measure?",
         "How does the draw control analysis work?",
     ]
-    st.markdown(
-        " ".join(f'<span class="example-chip">{p}</span>' for p in example_prompts),
-        unsafe_allow_html=True,
-    )
-    st.markdown("")
+    # Clickable prompt chips using columns of buttons
+    cols = st.columns(4)
+    for i, prompt in enumerate(example_prompts):
+        with cols[i % 4]:
+            if st.button(prompt, key=f"example_{i}", use_container_width=True):
+                st.session_state["_example_prompt"] = prompt
+                st.rerun()
+
+    # If an example prompt was clicked, inject it as user input
+    if "_example_prompt" in st.session_state:
+        user_input = st.session_state.pop("_example_prompt")
+        st.session_state["messages"].append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("LaxIQ is analyzing..."):
+                response_text = send_message(user_input)
+            st.markdown(response_text)
+        st.session_state["messages"].append({"role": "assistant", "content": response_text})
+        st.stop()
 
 # ── Render conversation history ──────────────────────────────────────
 # Messages persist across reruns; the full conversation re-renders every time.

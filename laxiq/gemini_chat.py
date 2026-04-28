@@ -197,7 +197,10 @@ def validate_api_key() -> bool:
     """Check if the Gemini API key is set up."""
     if not GENAI_AVAILABLE:
         return False
-    key = st.secrets.get("GEMINI_API_KEY", "")
+    try:
+        key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        return False
     return bool(key and len(key) > 5)
 
 

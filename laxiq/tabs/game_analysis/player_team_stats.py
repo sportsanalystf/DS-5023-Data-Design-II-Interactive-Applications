@@ -109,7 +109,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
 
                 fig_stats.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
-                    font=dict(family="DM Sans, sans-serif", color=LABEL_DARK_T2, size=12),
+                    font=dict(color=LABEL_DARK_T2, size=12),
                     margin=dict(l=130, r=60, t=50, b=30), height=chart_h,
                     title=dict(text="Statistical Comparison", font=dict(size=15, color=LABEL_DARK_T2),
                                x=0.01, xanchor="left"),
@@ -129,8 +129,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
 
             # quarter by quarter breakdown
 
-            st.markdown(f'<h4 style="color:{UVA_BLUE};">Quarter-by-Quarter Breakdown</h4>',
-                        unsafe_allow_html=True)
+            st.subheader("Quarter-by-Quarter Breakdown")
 
             # build QoQ data for both teams
             qoq_categories = [
@@ -168,49 +167,13 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     ov = safe_int(opp_row.iloc[0].get(q_label, 0)) if not opp_row.empty else 0
                     qoq_data[q_label][cat] = (uv, ov)
 
-            # render as 4 quarter cards side by side
+            # render as 4 quarter columns with metrics
             q_cols = st.columns(4)
-            short_labels = {"Goals": "G", "Shots": "SH", "Draw Controls": "DC",
-                            "Ground Balls": "GB", "Turnovers": "TO", "Saves": "SV"}
             for col, q_label in zip(q_cols, ["Q1", "Q2", "Q3", "Q4"]):
                 q_stats_map = qoq_data.get(q_label, {})
-                # score line
                 g_uva, g_opp = q_stats_map.get("Goals", (0, 0))
-                score_color = "#4CAF50" if g_uva > g_opp else "#EF5350" if g_opp > g_uva else "white"
-
-                stat_rows_html = ""
-                for cat in qoq_categories:
-                    uv, ov = q_stats_map.get(cat, (0, 0))
-                    sl = short_labels.get(cat, cat[:2])
-                    # highlight advantage
-                    uv_w = f"font-weight:700;color:{LABEL_DARK_T2};" if uv > ov else "color:#999;"
-                    ov_w = f"font-weight:700;color:{LABEL_DARK_T2};" if ov > uv else "color:#999;"
-                    if uv == ov:
-                        uv_w = ov_w = "color:#666;"
-                    stat_rows_html += f"""<div style="display:flex;justify-content:space-between;
-                        padding:3px 0;border-bottom:1px solid #ECECEC;font-size:0.75rem;">
-                        <span style="{uv_w}">{uv}</span>
-                        <span style="color:#999;font-size:0.65rem;text-transform:uppercase;
-                            letter-spacing:0.5px;">{sl}</span>
-                        <span style="{ov_w}">{ov}</span>
-                    </div>"""
-
-                card_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
-                    border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);">
-                    <div style="text-align:center;margin-bottom:10px;">
-                        <div style="font-size:0.6rem;color:#999;text-transform:uppercase;
-                            letter-spacing:1.5px;font-weight:600;">{q_label}</div>
-                        <div style="font-size:1.4rem;font-weight:700;color:{score_color};margin-top:2px;">
-                            {g_uva} — {g_opp}</div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding:0 2px 4px;
-                        font-size:0.6rem;color:#999;text-transform:uppercase;letter-spacing:0.5px;">
-                        <span>UVA</span><span>{away_team[:3].upper()}</span>
-                    </div>
-                    {stat_rows_html}
-                </div>"""
                 with col:
-                    st.markdown(card_html, unsafe_allow_html=True)
+                    st.metric(q_label, f"{g_uva} - {g_opp}")
 
         # virginia player influence using WPA
 
@@ -279,7 +242,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
 
             fig_inf.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
-                font=dict(family="DM Sans, sans-serif", color=LABEL_DARK_T2, size=12),
+                font=dict(color=LABEL_DARK_T2, size=12),
                 margin=dict(l=150, r=60, t=50, b=30), height=inf_h,
                 title=dict(text="Virginia Player Influence", font=dict(size=15, color=LABEL_DARK_T2),
                            x=0.01, xanchor="left"),
@@ -295,12 +258,12 @@ def render(sheets, game, info, home_team, opp, hs, aws):
             )
             st.plotly_chart(fig_inf, use_container_width=True)
 
-        # player statistics cards
+        # player statistics
 
         st.markdown("---")
-        st.markdown('<h4 style="color:#232D4B;">Player Statistics</h4>', unsafe_allow_html=True)
+        st.subheader("Player Statistics")
 
-        # sort by WPA descending for card layout
+        # filter to players with any activity
         card_players = uva_players_df[
             (uva_players_df["G"] + uva_players_df["A"] + uva_players_df["GB"]
              + uva_players_df["DC"] + uva_players_df["TO"] + uva_players_df["CT"]
@@ -309,99 +272,16 @@ def render(sheets, game, info, home_team, opp, hs, aws):
         ].copy().sort_values("WPA", ascending=False)
 
         if not card_players.empty:
-            # render 4-column grid of player cards
-            cols_per_row = 4
-            rows_needed = (len(card_players) + cols_per_row - 1) // cols_per_row
-            p_idx = 0
-            for row_i in range(rows_needed):
-                cols = st.columns(cols_per_row)
-                for col in cols:
-                    if p_idx >= len(card_players):
-                        break
-                    p = card_players.iloc[p_idx]
-                    name = p["Player"]
-                    number = int(p["Number"]) if pd.notna(p.get("Number")) else ""
-                    wpa_val = p["WPA"]
-                    wpa_color = "#4CAF50" if wpa_val >= 0 else "#EF5350"
-                    g_val = int(p["G"])
-                    a_val = int(p["A"])
-                    dc_val = int(p["DC"])
-                    to_val = int(p["TO"])
-                    ct_val = int(p["CT"])
-
-                    # figure out which stat to highlight for each player
-                    stats_list = [("G", g_val), ("A", a_val), ("DC", dc_val), ("TO", to_val), ("CT", ct_val)]
-                    highlight_stat = None
-                    if wpa_val >= 0:
-                        # positive: pick the highest-value positive stat (G > DC > CT > A)
-                        pos_weights = {"G": 5, "DC": 2.5, "CT": 2, "A": 3}
-                        best_score, best_label = 0, None
-                        for sl, sv in stats_list:
-                            if sl == "TO":
-                                continue
-                            weighted = sv * pos_weights.get(sl, 1)
-                            if weighted > best_score:
-                                best_score, best_label = weighted, sl
-                        if best_score > 0:
-                            highlight_stat = (best_label, "#4CAF50")  # green
-                    else:
-                        # negative: turnovers are usually the culprit
-                        if to_val > 0:
-                            highlight_stat = ("TO", "#EF5350")  # red
-                        else:
-                            # no TOs — check if low production is the issue
-                            neg_weights = {"G": 5, "DC": 2.5, "CT": 2, "A": 3}
-                            worst_label = None
-                            for sl, sv in stats_list:
-                                if sl == "TO":
-                                    continue
-                                if sv == 0 and neg_weights.get(sl, 0) > 0:
-                                    worst_label = sl
-                                    break
-                            if worst_label:
-                                highlight_stat = (worst_label, "#EF5350")
-
-                    stat_boxes = ""
-                    for stat_label, stat_val in stats_list:
-                        is_highlighted = highlight_stat and stat_label == highlight_stat[0]
-                        if is_highlighted:
-                            hl_color = highlight_stat[1]
-                            val_style = f"font-size:1.1rem;font-weight:700;color:{hl_color};"
-                            lbl_style = f"font-size:0.55rem;color:{hl_color};text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;font-weight:600;"
-                            box_bg = f"background:{'rgba(76,175,80,0.12)' if hl_color == '#4CAF50' else 'rgba(239,83,80,0.12)'};border-radius:6px;"
-                        else:
-                            val_style = f"font-size:1.1rem;font-weight:700;color:{LABEL_DARK_T2};"
-                            lbl_style = "font-size:0.55rem;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;"
-                            box_bg = ""
-                        stat_boxes += f"""<div style="text-align:center;flex:1;padding:3px 2px;{box_bg}">
-                            <div style="{val_style}">{stat_val}</div>
-                            <div style="{lbl_style}">{stat_label}</div>
-                        </div>"""
-
-                    card_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
-                        margin-bottom:10px;border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                            <div>
-                                <div style="font-size:0.95rem;font-weight:700;color:{LABEL_DARK_T2};">{name}</div>
-                                <div style="font-size:0.65rem;color:#999;">#{number}</div>
-                            </div>
-                            <div style="font-size:1rem;font-weight:700;color:{wpa_color};
-                                font-family:'Courier New',monospace;">{wpa_val:+.1f}%</div>
-                        </div>
-                        <div style="display:flex;gap:4px;margin-top:12px;background:#F5F5F5;
-                            border-radius:8px;padding:8px 4px;">
-                            {stat_boxes}
-                        </div>
-                    </div>"""
-                    with col:
-                        st.markdown(card_html, unsafe_allow_html=True)
-                    p_idx += 1
+            # display as simple dataframe
+            display_df = card_players[["Player", "Number", "G", "A", "DC", "TO", "CT", "WPA"]].copy()
+            display_df = display_df.rename(columns={"Number": "#"})
+            st.dataframe(display_df, hide_index=True)
 
         # goalkeeper section
         if "Goalkeepers" in sheets:
             gk = sheets["Goalkeepers"].copy()
             if not gk.empty:
-                st.markdown('<h4 style="color:#232D4B;">Goalkeeper Performance</h4>', unsafe_allow_html=True)
+                st.subheader("Goalkeeper Performance")
                 uva_gk = gk[gk["Team"].str.contains("Virginia", case=False, na=False)] if "Team" in gk.columns else gk
                 if not uva_gk.empty:
                     for _, gk_row in uva_gk.iterrows():
@@ -411,78 +291,15 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                         gk_ga = gk_row.get("GA", 0)
                         gk_sv = gk_row.get("Saves", 0)
                         gk_dec = gk_row.get("Decision", "")
-                        dec_color = "#4CAF50" if gk_dec == "W" else "#EF5350"
 
-                        gk_stat_boxes = ""
-                        for sl, sv in [("MIN", gk_min), ("GA", gk_ga), ("SV", gk_sv)]:
-                            gk_stat_boxes += f"""<div style="text-align:center;flex:1;">
-                                <div style="font-size:1.1rem;font-weight:700;color:{LABEL_DARK_T2};">{sv}</div>
-                                <div style="font-size:0.55rem;color:#999;text-transform:uppercase;
-                                    letter-spacing:0.5px;margin-top:2px;">{sl}</div>
-                            </div>"""
-
-                        gk_html = f"""<div style="background:white;border-radius:10px;padding:14px 16px;
-                            margin-bottom:10px;border:1px solid {BORDER};box-shadow:0 2px 8px rgba(35,45,75,0.06);max-width:320px;">
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                                <div>
-                                    <div style="font-size:0.95rem;font-weight:700;color:{LABEL_DARK_T2};">{gk_name}</div>
-                                    <div style="font-size:0.65rem;color:#999;">#{gk_num}</div>
-                                </div>
-                                <div style="font-size:0.85rem;font-weight:700;color:{dec_color};
-                                    letter-spacing:1px;">{gk_dec}</div>
-                            </div>
-                            <div style="display:flex;gap:4px;margin-top:12px;background:#F5F5F5;
-                                border-radius:8px;padding:8px 4px;">
-                                {gk_stat_boxes}
-                            </div>
-                        </div>"""
-                        st.markdown(gk_html, unsafe_allow_html=True)
-
-        # position filter -> player spotlight
-        st.markdown("---")
-        st.markdown('<h4 style="color:#232D4B;">Player Spotlight</h4>', unsafe_allow_html=True)
-        st.caption("Select a position to filter available players, then pick a player for a detailed game snapshot.")
-
-        uva_pl = sheets.get("UVA_Players")
-        if uva_pl is not None and not uva_pl.empty and "Player" in uva_pl.columns:
-            # build position map from player intelligence data if available
-            # fallback: infer from stats (GK has saves-related cols)
-            _all_positions = sorted(set(
-                ["A", "M", "D", "GK"] if "Position" not in uva_pl.columns
-                else uva_pl["Position"].dropna().unique()
-            ))
-            dep1, dep2 = st.columns(2)
-            with dep1:
-                spot_pos = st.selectbox("Position Filter", _all_positions, key="spotlight_pos",
-                                        help="Selecting a position filters the Player dropdown")
-            # build dependent player list based on position
-            # without explicit Position column, use heuristics: GK if row has very low SH
-            if "Position" in uva_pl.columns:
-                pos_players = uva_pl[uva_pl["Position"] == spot_pos]["Player"].tolist()
-            else:
-                # heuristic: GK = low shots & high saves; everyone else = field
-                if spot_pos == "GK":
-                    pos_players = uva_pl[uva_pl["SH"] == 0]["Player"].tolist() if "SH" in uva_pl.columns else []
-                else:
-                    pos_players = uva_pl[uva_pl["SH"] > 0]["Player"].tolist() if "SH" in uva_pl.columns else uva_pl["Player"].tolist()
-            if not pos_players:
-                pos_players = uva_pl["Player"].tolist()  # fallback
-
-            with dep2:
-                spot_player = st.selectbox("Player", pos_players, key="spotlight_player",
-                                           help="Players available depend on Position Filter selection")
-
-            # show that player's stats for this game
-            p_row = uva_pl[uva_pl["Player"] == spot_player]
-            if not p_row.empty:
-                p = p_row.iloc[0]
-                sp_cols = st.columns(6)
-                stat_map = [("Goals", "G"), ("Assists", "A"), ("Shots", "SH"),
-                            ("GB", "GB"), ("DC", "DC"), ("TO", "TO")]
-                for col_obj, (label, col_key) in zip(sp_cols, stat_map):
-                    val = int(p.get(col_key, 0)) if pd.notna(p.get(col_key)) else 0
-                    with col_obj:
-                        st.metric(label, val)
+                        st.write(f"**{gk_name}** #{gk_num}")
+                        gk_cols = st.columns(3)
+                        with gk_cols[0]:
+                            st.metric("Minutes", gk_min)
+                        with gk_cols[1]:
+                            st.metric("Goals Against", gk_ga)
+                        with gk_cols[2]:
+                            st.metric("Saves", gk_sv)
 
     except Exception as e:
         st.error(f"Error in Players & Team Stats tab: {e}")

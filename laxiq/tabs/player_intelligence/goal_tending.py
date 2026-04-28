@@ -118,12 +118,8 @@ def render(all_data):
         shots_df = pd.DataFrame(ALL_SHOTS)
 
         # header
-        st.markdown(f"""<div style="background:linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 60%, {UVA_ORANGE} 100%);
-            padding:1.2rem 2rem;border-radius:14px;margin-bottom:1.2rem;">
-            <h2 style="color:white !important;margin:0;font-size:1.8rem;">Elyse Finnelle — Shot Intelligence</h2>
-            <p style="color:rgba(255,255,255,0.7);margin:4px 0 0 0;font-size:0.85rem;">
-            {len(ALL_SHOTS)} Shots Analyzed · 7-Game Film Study · 2026 Early Season</p>
-        </div>""", unsafe_allow_html=True)
+        st.subheader("Elyse Finnelle — Shot Intelligence")
+        st.caption(f"{len(ALL_SHOTS)} Shots Analyzed · 7-Game Film Study · 2026 Early Season")
 
         # game filter
         game_options = ["ALL"] + sorted(shots_df["game"].unique().tolist())
@@ -211,8 +207,7 @@ def render(all_data):
                 hovertemplate="Zone: %{y}-%{x}<br>Value: %{text}<extra></extra>"
             ))
             fig.update_layout(height=220, margin=dict(l=40, r=20, t=30, b=20),
-                paper_bgcolor=WHITE, plot_bgcolor=WHITE, font=dict(family="DM Sans"),
-                title=dict(text=title, font=dict(size=13, color=UVA_BLUE)),
+                paper_bgcolor=WHITE, plot_bgcolor=WHITE,                 title=dict(text=title, font=dict(size=13, color=UVA_BLUE)),
                 yaxis=dict(autorange="reversed"))
             with col_obj:
                 st.plotly_chart(fig, use_container_width=True)
@@ -366,8 +361,7 @@ def render(all_data):
                 textinfo="label+percent", textfont=dict(size=11),
                 hole=0.5
             ))
-            fig_donut.update_layout(height=320, font=dict(family="DM Sans"),
-                paper_bgcolor=WHITE, plot_bgcolor=WHITE, showlegend=False,
+            fig_donut.update_layout(height=320,                 paper_bgcolor=WHITE, plot_bgcolor=WHITE, showlegend=False,
                 title=dict(text="Goal Concession by Type", font=dict(size=14, color=UVA_BLUE)),
                 margin=dict(t=60, b=20))
             st.plotly_chart(fig_donut, use_container_width=True)

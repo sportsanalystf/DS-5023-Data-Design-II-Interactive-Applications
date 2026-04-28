@@ -3,36 +3,14 @@
 import streamlit as st
 st.set_page_config(page_title="Lax IQ - Game Analysis", page_icon="⚔️", layout="wide")
 
-from style import *
+from style import CSS, UVA_BLUE, UVA_ORANGE, section_header
 from analytics import *
 from sidebar import render_sidebar
 from api_integrations import (fetch_game_weather, fetch_team_info,
                                render_weather_card, render_team_info_card)
 
+# Hide Streamlit's auto-navigation
 st.markdown(CSS, unsafe_allow_html=True)
-st.markdown(f"""<style>
-.main-header {{
-    background: linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 50%, {UVA_ORANGE} 100%);
-    padding: 1.5rem 2.5rem;
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}}
-.main-header h1 {{
-    color: white !important;
-    font-size: 2.5rem;
-    margin: 0;
-    font-family: 'Bebas Neue', sans-serif !important;
-    line-height: 1;
-}}
-.main-header p {{
-    color: rgba(255,255,255,0.75) !important;
-    font-size: 0.95rem;
-    margin: 0.25rem 0 0 0;
-}}
-</style>""", unsafe_allow_html=True)
 
 # --- sidebar with game selector ---
 render_sidebar(show_game_selector=True)
@@ -65,17 +43,16 @@ except Exception:
     _n_games = 13
     _wins, _losses = 6, 7
 
-# --- page header banner ---
-st.markdown(f"""
-<div class="main-header">
-    <div>
-        <h1>LaxIQ — Game Analysis</h1>
-        <p>Women's Lacrosse · 2026 Season ({_n_games} Games) · Record: {_wins}-{_losses} · Post-Game Breakdown Dashboard</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# --- page title and subtitle ---
+st.markdown(
+    f'<div style="background:{UVA_BLUE};padding:24px 28px;border-radius:10px;margin-bottom:20px;">'
+    f'<h1 style="color:white;margin:0;font-size:2rem;">📊 LaxIQ — Game Analysis</h1>'
+    f'<p style="color:{UVA_ORANGE};margin:6px 0 0 0;font-size:0.95rem;">'
+    f'Women\'s Lacrosse · 2026 Season ({_n_games} Games) · Record: {_wins}-{_losses}</p></div>',
+    unsafe_allow_html=True,
+)
 
-# build quarter scores for header
+# build quarter scores
 quarter_scores = None
 score_qoq = sheets.get("Score_By_Quarter")
 if score_qoq is not None and not score_qoq.empty:
@@ -92,56 +69,40 @@ if score_qoq is not None and not score_qoq.empty:
         pass
 
 # --- game header ---
-badge_bg = POSITIVE if result == "W" else NEGATIVE
-badge_text = "WIN" if result == "W" else "LOSS"
-winner_color = "white"
-loser_color = "rgba(255,255,255,0.35)"
+result_text = "WIN" if result == "W" else "LOSS"
+_result_color = "#2E7D32" if result == "W" else "#C62828"
+st.markdown(
+    f'<div style="background:white;border:1px solid #E0E0E0;border-radius:10px;padding:20px;text-align:center;margin-bottom:16px;">'
+    f'<h2 style="color:{UVA_BLUE};margin:0;">Virginia {hs} - {aws} {opp}</h2>'
+    f'<p style="color:#666;margin:6px 0 0 0;">{game_date} · {location} · '
+    f'<span style="color:{_result_color};font-weight:700;">{result_text}</span></p></div>',
+    unsafe_allow_html=True,
+)
 
-st.markdown(f"""<div style="background:linear-gradient(135deg, {UVA_BLUE} 0%, #3A4F7A 50%, {UVA_ORANGE} 100%);
-    border-radius:14px;padding:20px 28px;color:white;text-align:center;position:relative;margin-bottom:0;">
-    <div style="font-size:0.7rem;opacity:0.6;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">
-        Women's Lacrosse &middot; {game_date} &middot; {location}</div>
-    <span style="position:absolute;right:28px;top:20px;background:{badge_bg};padding:3px 14px;
-        border-radius:20px;font-size:0.68rem;font-weight:700;letter-spacing:1.5px;">{badge_text}</span>
-</div>""", unsafe_allow_html=True)
-
-# score row using st.columns
-h_col, vs_col, a_col = st.columns([3, 1, 3])
+# score display using st.metric
+h_col, vs_col, a_col = st.columns(3)
 with h_col:
-    h_score_color = "white" if result == "W" else "gray"
-    st.markdown(f"""<div style="text-align:center;padding:10px 0;">
-        <div style="font-size:0.9rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:{UVA_ORANGE};">Virginia</div>
-        <div style="font-size:3rem;font-weight:700;color:{UVA_BLUE};line-height:1;">{hs}</div>
-    </div>""", unsafe_allow_html=True)
+    h_col.metric("Virginia", hs)
 with vs_col:
-    st.markdown(f'<div style="text-align:center;padding-top:24px;font-size:0.75rem;color:#999;letter-spacing:2px;font-weight:600;">FINAL</div>', unsafe_allow_html=True)
+    vs_col.text("FINAL")
 with a_col:
-    st.markdown(f"""<div style="text-align:center;padding:10px 0;">
-        <div style="font-size:0.9rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#999;">{opp}</div>
-        <div style="font-size:3rem;font-weight:700;color:{'#999' if result == 'W' else UVA_BLUE};line-height:1;">{aws}</div>
-    </div>""", unsafe_allow_html=True)
+    a_col.metric(opp, aws)
 
-# quarter scores
+# quarter scores using st.metric
 if quarter_scores:
+    st.markdown(section_header("Quarter Scores"), unsafe_allow_html=True)
     q_cols = st.columns(4)
     for i, (col, (hq, aq)) in enumerate(zip(q_cols, quarter_scores)):
-        col.markdown(f"""<div style="text-align:center;background:white;border:1px solid #DADADA;border-radius:8px;padding:6px 4px;">
-            <div style="font-size:0.65rem;color:#999;font-weight:600;">Q{i+1}</div>
-            <div style="font-size:0.9rem;font-weight:700;color:{UVA_BLUE};">{hq}-{aq}</div>
-        </div>""", unsafe_allow_html=True)
+        col.metric(f"Q{i+1}", f"{hq}-{aq}")
 
-# grade strip — using st.columns
+# game grades using st.metric
 grades = compute_game_grades(sheets)
 grade_cats = ["Offense", "Defense", "Transition", "Draw Unit", "Goalkeeping", "Discipline"]
+st.markdown(section_header("Game Grades"), unsafe_allow_html=True)
 g_cols = st.columns(len(grade_cats))
 for col, cat in zip(g_cols, grade_cats):
     g = grades.get(cat, "N/A")
-    gc = grade_color(g)
-    col.markdown(f"""<div style="text-align:center;background:white;border:1px solid #DADADA;
-        border-radius:8px;padding:10px 4px;box-shadow:0 1px 4px rgba(35,45,75,0.04);">
-        <div style="font-size:0.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">{cat}</div>
-        <div style="font-size:1.6rem;font-weight:700;color:{gc};">{g}</div>
-    </div>""", unsafe_allow_html=True)
+    col.metric(cat, g)
 
 # weather card for game location
 with st.spinner("Loading weather data..."):

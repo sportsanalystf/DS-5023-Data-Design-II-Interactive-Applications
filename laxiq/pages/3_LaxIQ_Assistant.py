@@ -22,22 +22,13 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # sidebar
 with st.sidebar:
-    import os, base64
+    import os
     _logo_dir = os.path.dirname(os.path.dirname(__file__))
     _logo_path = os.path.join(_logo_dir, "assets", "va_logo.png")
     if os.path.exists(_logo_path):
-        with open(_logo_path, "rb") as _f:
-            _b64 = base64.b64encode(_f.read()).decode()
-        st.markdown(f"""<a href="https://virginiasports.com" target="_blank"
-            style="display:block;text-align:center;margin-bottom:8px;">
-            <img src="data:image/png;base64,{_b64}" style="max-width:180px;margin:0 auto;" />
-        </a>""", unsafe_allow_html=True)
+        st.image(_logo_path, width=180)
 
-    st.markdown(
-        f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;'
-        f'color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>',
-        unsafe_allow_html=True,
-    )
+    st.title("⚔️ LaxIQ")
     st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
@@ -58,32 +49,14 @@ with st.sidebar:
     st.caption("Powered by Google Gemini")
     st.caption("Ask me about UVA lacrosse stats, player performance, game breakdowns, and more.")
 
-# chat page styles
-st.markdown(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-.chat-header {{
-    background: linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 60%, {UVA_ORANGE} 100%);
-    border-radius: 14px; padding: 1.5rem 2rem; margin-bottom: 1.2rem;
-    color: white;
-}}
-.chat-header h1 {{
-    font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 2.4rem; letter-spacing: 2px; margin: 0; line-height: 1;
-    color: white !important;
-}}
-.chat-header .sub {{
-    color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-top: 4px;
-}}
-</style>
-""", unsafe_allow_html=True)
-
 # header
-st.markdown("""<div class="chat-header">
-    <h1>🤖 LaxIQ Assistant</h1>
-    <div class="sub">AI-powered analytics assistant for UVA Women's Lacrosse · Ask about stats, players, games, and strategy</div>
-</div>""", unsafe_allow_html=True)
+st.markdown(
+    f'<div style="background:{UVA_BLUE};padding:24px 28px;border-radius:10px;margin-bottom:20px;">'
+    f'<h1 style="color:white;margin:0;font-size:2rem;">🤖 LaxIQ Assistant</h1>'
+    f'<p style="color:{UVA_ORANGE};margin:6px 0 0 0;font-size:0.95rem;">'
+    f'AI-powered analytics assistant for UVA Women\'s Lacrosse</p></div>',
+    unsafe_allow_html=True,
+)
 
 # check API key
 if not validate_api_key():

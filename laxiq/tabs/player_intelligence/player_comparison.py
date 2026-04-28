@@ -50,16 +50,15 @@ def render(sorted_players, all_data):
         shared_keys = ["offensive", "defensive", "possession", "efficiency", "discipline"]
 
         # side-by-side radar charts
+        fill_colors = {UVA_ORANGE: "rgba(229,114,0,0.15)", UVA_BLUE: "rgba(35,45,75,0.15)"}
         rc1, rc2 = st.columns(2)
         for col, pname, pdata, color in [(rc1, p1_name, d1, UVA_ORANGE), (rc2, p2_name, d2, UVA_BLUE)]:
             with col:
                 img_url = HEADSHOT_URLS.get(pname, "")
-                hdr = f'<div style="text-align:center;">'
                 if img_url:
-                    hdr += f'<img src="{img_url}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid {color};margin-bottom:8px;" onerror="this.style.display=\'none\'">'
-                hdr += f'<h3 style="color:{color} !important;margin:0;">{pname}</h3>'
-                hdr += f'<p style="color:{TEXT_GRAY};font-size:0.85rem;">#{pdata["player"]["num"]} · {pdata["player"]["pos"]} · {pdata["player"]["yr"]} · Impact: {pdata["scores"]["overall"]:.0f}</p></div>'
-                st.markdown(hdr, unsafe_allow_html=True)
+                    st.image(img_url, width=90)
+                st.write(f"**{pname}**")
+                st.caption(f"#{pdata['player']['num']} · {pdata['player']['pos']} · {pdata['player']['yr']} · Impact: {pdata['scores']['overall']:.0f}")
 
                 vals = [pdata["scores"][k] for k in shared_keys]
                 vals = [max(0, min(v, 100)) for v in vals]
@@ -67,11 +66,11 @@ def render(sorted_players, all_data):
                 cats_closed = shared_cats + [shared_cats[0]]
                 fig = go.Figure()
                 fig.add_trace(go.Scatterpolar(r=vals, theta=cats_closed, fill='toself',
-                    fillcolor=f'rgba({",".join(str(int(color[i:i+2], 16)) for i in (1,3,5))},0.15)',
+                    fillcolor=fill_colors.get(color, "rgba(200,200,200,0.15)"),
                     line=dict(color=color, width=2.5), marker=dict(size=6, color=color)))
                 fig.update_layout(**PLOTLY_LAYOUT, polar=dict(bgcolor="rgba(0,0,0,0)",
-                    radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, gridcolor=MED_GRAY),
-                    angularaxis=dict(gridcolor=MED_GRAY, tickfont=dict(size=10, color=TEXT_GRAY))),
+                    radialaxis=dict(visible=True, range=[0, 100], showticklabels=False),
+                    angularaxis=dict(tickfont=dict(size=10))),
                     showlegend=False, height=280)
                 st.plotly_chart(fig, use_container_width=True, key=f"cmp_r_{pname}")
 

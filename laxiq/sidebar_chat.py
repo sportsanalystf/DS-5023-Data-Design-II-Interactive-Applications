@@ -8,12 +8,7 @@ from style import UVA_BLUE, UVA_ORANGE
 def render_sidebar_chat():
     """Render chat panel in sidebar."""
     with st.sidebar:
-        st.markdown(
-            f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;'
-            f'letter-spacing:1px;color:{UVA_ORANGE};margin:12px 0 4px 0;">'
-            f'🤖 Ask LaxIQ</p>',
-            unsafe_allow_html=True,
-        )
+        st.markdown("**🤖 Ask LaxIQ**")
 
         if not validate_api_key():
             st.caption("⚠️ Add GEMINI_API_KEY to secrets.toml")

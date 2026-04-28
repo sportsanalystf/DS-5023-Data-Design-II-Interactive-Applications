@@ -1,12 +1,13 @@
 """
-Player Cards tab - Individual player performance profiles with radar charts, stats, and trends.
+Player Cards tab - Player stats table and individual player detail view.
 """
 import streamlit as st
-from style import (UVA_BLUE, UVA_BLUE_25, WHITE,
+import pandas as pd
+from style import (UVA_BLUE, UVA_BLUE_25, WHITE, section_header,
                    GREEN as UVA_GREEN, YELLOW as UVA_YELLOW, MAGENTA as UVA_MAGENTA)
 from .charts import make_radar_chart, make_game_log_chart, make_shot_efficiency_bar
 
-# headshot URLs for players
+# headshot URLs — also imported by player_comparison
 HEADSHOT_URLS = {
     "Madison Alaimo": "https://virginiasports.com/imgproxy/pYMb3-v9_Iw05OEJEvS-VLV-PkXLxFnbK2dnVLNGX2o/rs:fit:400:0:0:0/g:ce:0:0/q:85/aHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL3Zpcmdpbmlhc3BvcnRzLWNvbS1wcm9kLzIwMjUvMDEvMDcvYm9JU25aRzgycFVLbFVqTjc3c3daUkRwV0JOWkdpVDQ2UG0zSUVCQy5qcGc.jpg",
     "Jenna Dinardo": "https://virginiasports.com/imgproxy/M-EqJX8pcAsMqHLqjB7zcRq0P-nR7bKVTQ8i_D86R_4/rs:fit:400:0:0:0/g:ce:0:0/q:85/aHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL3Zpcmdpbmlhc3BvcnRzLWNvbS1wcm9kLzIwMjUvMDEvMDcvaUpmMjVsZWtZazlNZzRRYWxoTWlCZmhSNldUZjBxZnBTdW1kbENRYi5qcGc.jpg",
@@ -34,59 +35,46 @@ HEADSHOT_URLS = {
 
 
 def render(filtered, sorted_players, games):
-    """Render the Player Cards tab showing individual player profiles with radar, stats, and trends."""
-    st.markdown("## Player Performance Cards")
-    if sorted_players:
-        player_names = [name for name, _ in sorted_players]
-        selected_player = st.selectbox("Select Player", player_names,
-            format_func=lambda n: f"#{filtered[n]['player']['num']} {n} ({filtered[n]['player']['pos']}) — Impact: {filtered[n]['scores']['overall']:.0f}",
-            key="player_card_selector")
-        _card_data = filtered[selected_player]
-        _card_items = [(selected_player, _card_data)]
-    else:
-        _card_items = []
+    """Render the Player Cards tab showing a stats table and individual player details."""
+    st.markdown(section_header("Player Cards"), unsafe_allow_html=True)
+
+    if not sorted_players:
         st.info("No players match the current filters.")
+        return
 
-    for name, data in _card_items:
-        p = data["player"]
-        m = data["metrics"]
-        s = data["scores"]
-        flags = data["flags"]
-        tier_text = f"TIER {data['tier_num']} · {data['tier_label'].upper()}"
+    player_names = [name for name, _ in sorted_players]
+    selected_player = st.selectbox("Select Player", player_names,
+        format_func=lambda n: f"#{filtered[n]['player']['num']} {n} ({filtered[n]['player']['pos']}) — Impact: {filtered[n]['scores']['overall']:.0f}",
+        key="player_card_selector")
 
-        st.markdown('<div class="player-card">', unsafe_allow_html=True)
+    data = filtered[selected_player]
+    p = data["player"]
+    m = data["metrics"]
+    s = data["scores"]
+    tier_text = f"Tier {data['tier_num']} — {data['tier_label']}"
 
-        # header with headshot, name, and impact score
-        top1, top2, top3 = st.columns([0.5, 3.5, 1])
-        with top1:
-            img_url = HEADSHOT_URLS.get(name, "")
-            if img_url:
-                st.markdown(f'<img src="{img_url}" class="headshot-circle" onerror="this.style.display=\'none\'">', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div style="width:80px;height:80px;border-radius:50%;background:{UVA_BLUE_25};display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:{UVA_BLUE};font-family:Bebas Neue;">{p["num"]}</div>', unsafe_allow_html=True)
-        with top2:
-            st.markdown(f'<p class="player-name">#{p["num"]} {name}</p>', unsafe_allow_html=True)
-            st.markdown(f'<p class="player-meta">{p["pos"]} · {p["yr"]} · {p["gp"]} GP / {p["gs"]} GS <span class="tier-badge tier-{data["tier_num"]}">{tier_text}</span></p>', unsafe_allow_html=True)
-        with top3:
-            st.markdown(f'<div class="impact-score-box"><div class="impact-score-num">{s["overall"]:.0f}</div><div class="impact-score-label">Impact Score</div></div>', unsafe_allow_html=True)
+    # player header
+    st.write(f"**#{p['num']} {selected_player}** — {p['pos']} · {p['yr']} · {p['gp']} GP · {tier_text}")
 
-        # category scores
-        cat_cols = st.columns(5)
-        for col, (label, key) in zip(cat_cols, [("OFFENSE", "offensive"), ("DEFENSE", "defensive"),
-                                                 ("POSSESSION", "possession"), ("EFFICIENCY", "efficiency"), ("DISCIPLINE", "discipline")]):
-            val = s[key]
-            color = UVA_GREEN if val >= 65 else UVA_YELLOW if val >= 40 else UVA_MAGENTA
-            with col:
-                st.markdown(f'<div class="stat-box"><div class="stat-val" style="color:{color}">{val:.0f}</div><div class="stat-label">{label}</div></div>', unsafe_allow_html=True)
+    # category scores
+    cat_cols = st.columns(6)
+    for col, (label, key) in zip(cat_cols, [("Overall", "overall"), ("Offense", "offensive"), ("Defense", "defensive"),
+                                             ("Possession", "possession"), ("Efficiency", "efficiency"), ("Discipline", "discipline")]):
+        val = s[key]
+        with col:
+            st.metric(label, f"{val:.0f}")
 
-        st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+    # layout: radar on left, core+advanced stats and game trend on right
+    col_left, col_right = st.columns([1, 2])
 
-        # radar chart, core stats, and game log
-        col_radar, col_stats, col_gamelog = st.columns([1.2, 1, 1.3])
-        with col_radar:
-            st.plotly_chart(make_radar_chart(s, p["pos"]), use_container_width=True, key=f"radar_{name}")
-        with col_stats:
-            st.markdown("**Core Stats**")
+    with col_left:
+        st.plotly_chart(make_radar_chart(s, p["pos"]), use_container_width=True, key=f"radar_{selected_player}")
+
+    with col_right:
+        # core stats and advanced side by side
+        cs_col, adv_col = st.columns(2)
+        with cs_col:
+            st.write("**Core Stats**")
             if p["pos"] != "GK":
                 r1a, r1b, r1c, r1d = st.columns(4)
                 r1a.metric("G", p["g"]); r1b.metric("A", p["a"])
@@ -102,34 +90,26 @@ def render(filtered, sorted_players, games):
                     r2a.metric("Saves", p["gk_sv"]); r2b.metric("GA", p["gk_ga"])
                     r3a, r3b = st.columns(2)
                     r3a.metric("W-L", f"{p.get('gk_w',0)}-{p.get('gk_l',0)}"); r3b.metric("GB", p["gb"])
-            st.markdown("**Advanced**")
+        with adv_col:
+            st.write("**Advanced**")
             if p["pos"] != "GK" and p["sh"] > 0:
                 a1, a2 = st.columns(2)
                 a1.metric("Pts/Shot", f"{m['pts_per_shot']:.2f}"); a2.metric("TO Rate", f"{m['to_rate']:.2f}")
                 a3, a4 = st.columns(2)
                 a3.metric("Poss Impact", f"{m['poss_impact']:+d}"); a4.metric("Consistency", f"{m['consistency']:.2f}")
-        with col_gamelog:
-            st.markdown("**Game-by-Game Trend**")
-            st.plotly_chart(make_game_log_chart(p, games), use_container_width=True, key=f"gl_{name}")
 
-        # shot funnel for shooters
-        if p["sh"] >= 3 and p["pos"] != "GK":
-            st.markdown("**Shot Funnel**")
-            st.plotly_chart(make_shot_efficiency_bar(p), use_container_width=True, key=f"sf_{name}")
+        # game-by-game trend below stats, still inside right column
+        st.write("**Game-by-Game Trend**")
+        st.plotly_chart(make_game_log_chart(p, games), use_container_width=True, key=f"gl_{selected_player}")
 
-        # development flags
-        if flags:
-            flag_html = ""
-            for fname, ftype in flags:
-                flag_html += f'<span class="flag-tag flag-{ftype}">{fname}</span>'
-            st.markdown(f"**Development Flags** &nbsp; {flag_html}", unsafe_allow_html=True)
+    # shot funnel for shooters
+    if p["sh"] >= 3 and p["pos"] != "GK":
+        st.write("**Shot Funnel**")
+        st.plotly_chart(make_shot_efficiency_bar(p), use_container_width=True, key=f"sf_{selected_player}")
 
-        # coaching notes and recommendations
-        st.markdown(f'<div class="coaching-notes">{data["notes"]}</div>', unsafe_allow_html=True)
+    # coaching notes
+    st.info(data["notes"])
 
-        if data["recs"]:
-            for rec in data["recs"]:
-                st.markdown(f'<div class="rec-box">{rec}</div>', unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown("")
+    if data["recs"]:
+        for rec in data["recs"]:
+            st.caption(rec)

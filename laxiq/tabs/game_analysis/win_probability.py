@@ -179,7 +179,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
 
                 fig.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_BG,
-                    font=dict(family="DM Sans, sans-serif", color=LABEL_DARK, size=12),
+                    font=dict(color=LABEL_DARK, size=12),
                     margin=dict(l=60, r=20, t=70, b=120), height=550,
                     title=dict(text=chart_title, font=dict(size=15, color=LABEL_DARK),
                                x=0.01, xanchor="left"),
@@ -250,7 +250,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result, quarter_scores):
                     fig_impact.add_hline(y=0, line_color="#999", line_width=1)
                     fig_impact.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                        font=dict(family="DM Sans, sans-serif", color=UVA_BLUE, size=12),
+                        font=dict(color=UVA_BLUE, size=12),
                         margin=dict(l=50, r=20, t=60, b=50), height=360,
                         title=dict(text="UVA Average WP Shift by Event Type", font=dict(size=14)),
                         xaxis=dict(title="", gridcolor="#ECECEC",

@@ -4,7 +4,7 @@ import streamlit as st
 from analytics import list_games, load_game
 from style import (CSS, UVA_BLUE, UVA_ORANGE, POSITIVE, NEGATIVE,
                    CYAN, YELLOW, GREEN, MAGENTA, TEAL,
-                   metric_card, PLOT_LAYOUT)
+                   metric_card, PLOT_LAYOUT, section_header)
 import pandas as pd
 import re
 
@@ -12,98 +12,15 @@ st.set_page_config(page_title="Lax IQ - Cavaliers Lacrosse Analytics", page_icon
                    initial_sidebar_state="collapsed")
 st.markdown(CSS, unsafe_allow_html=True)
 
-# Extra CSS for this page
-st.markdown(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-.hero-banner {{
-    background: linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 40%, {UVA_ORANGE} 100%);
-    border-radius: 16px; padding: 2rem 2.5rem; margin-bottom: 1.5rem;
-    color: white; position: relative; overflow: hidden;
-}}
-.hero-banner h1 {{
-    font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 3.2rem; letter-spacing: 3px; margin: 0; line-height: 1;
-    color: white !important;
-}}
-.hero-banner .sub {{ color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 6px; }}
-.hero-banner .record-badge {{
-    display: inline-block; background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3); border-radius: 12px;
-    padding: 8px 20px; margin-top: 12px; font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem; letter-spacing: 2px;
-}}
-.adv-card {{
-    background: white; border: 1px solid #DADADA; border-radius: 10px;
-    padding: 14px 12px; box-shadow: 0 1px 4px rgba(35,45,75,0.04);
-    margin-bottom: 4px;
-}}
-.adv-card .amc-label {{
-    font-size: 0.72rem; color: #999; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
-}}
-.adv-card .amc-value {{
-    font-size: 1.4rem; font-weight: 700; color: {UVA_BLUE};
-}}
-.adv-card .amc-rank {{
-    font-size: 0.85rem; font-weight: 600; color: {UVA_ORANGE}; float: right;
-    margin-top: 4px;
-}}
-.rank-row {{
-    background: white; border: 1px solid #ECECEC; padding: 8px 14px;
-    display: flex; justify-content: space-between; align-items: center;
-    border-bottom: none;
-}}
-.rank-row:last-child {{ border-bottom: 1px solid #ECECEC; }}
-.rank-row:first-child {{ border-radius: 8px 8px 0 0; }}
-.rank-row:last-child {{ border-radius: 0 0 8px 8px; border-bottom: 1px solid #ECECEC; }}
-.rank-row .rl {{ font-size: 0.8rem; color: #666; }}
-.rank-row .rv {{ font-size: 0.9rem; font-weight: 700; color: {UVA_BLUE}; }}
-.rank-row .rr {{ font-size: 0.78rem; font-weight: 600; color: {UVA_ORANGE}; margin-left: 8px; }}
-
-.section-label {{
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
-    letter-spacing: 1.5px; color: {UVA_BLUE}; margin: 1.5rem 0 0.8rem 0;
-}}
-
-/* Responsive: keep metric cards from wrapping text oddly */
-.metric-card {{
-    min-width: 0;
-    overflow: hidden;
-}}
-.metric-value {{
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}}
-.adv-card .amc-value {{
-    white-space: nowrap;
-}}
-</style>
-""", unsafe_allow_html=True)
-
 # sidebar setup
 with st.sidebar:
     # logo
-    import os, base64
+    import os
     _logo_dir = os.path.dirname(__file__)
     _logo_path = os.path.join(_logo_dir, "assets", "va_logo.png")
     if os.path.exists(_logo_path):
-        with open(_logo_path, "rb") as _f:
-            _b64 = base64.b64encode(_f.read()).decode()
-        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="display:block;text-align:center;margin-bottom:8px;">
-            <img src="data:image/png;base64,{_b64}" style="max-width:180px;margin:0 auto;" />
-        </a>""", unsafe_allow_html=True)
-    else:
-        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="text-decoration:none;">
-            <div style="background:linear-gradient(135deg, {UVA_ORANGE} 0%, #c75b00 100%);
-                border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:8px;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;
-                    color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
-            </div>
-        </a>""", unsafe_allow_html=True)
-    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
+        st.image(_logo_path, width=180)
+    st.title("⚔️ LaxIQ")
     st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
@@ -297,30 +214,31 @@ NATIONAL_RANKS = {
 # hero banner
 
 n_games = len(played_games)
-st.markdown(f"""<div class="hero-banner">
-    <h1>⚔️ Lax-IQ · Virginia Cavaliers Lacrosse Analytics App</h1>
-    <div class="sub">Women's Lacrosse · 2026 Season ({n_games} Games) · Record: {wins}-{losses} · Advanced Analytics Dashboard</div>
-    <div class="record-badge">{wins}-{losses} ({conf_wins}-{conf_losses} ACC)</div>
-</div>""", unsafe_allow_html=True)
+st.markdown(
+    f'<div style="background:{UVA_BLUE};padding:24px 28px;border-radius:10px;margin-bottom:20px;">'
+    f'<h1 style="color:white;margin:0;font-size:2rem;">⚔️ LaxIQ — Season Overview</h1>'
+    f'<p style="color:{UVA_ORANGE};margin:6px 0 0 0;font-size:0.95rem;">'
+    f'Record: {wins}-{losses} ({conf_wins}-{conf_losses} ACC) · {n_games} games played</p></div>',
+    unsafe_allow_html=True,
+)
 
 # kpi cards
-kpi_data = [
-    (f"{wins}-{losses}", "Overall", "val-neg" if losses > wins else "val-pos"),
-    (f".{int(win_pct * 1000):03d}", "PCT", ""),
-    (f"{conf_wins}-{conf_losses}", "ACC", "val-pos" if conf_wins > conf_losses else "val-neg"),
-    (f"{streak_type}{streak_count}", "Streak", "val-pos" if streak_type == "W" else "val-neg"),
-    (f"{home_wins}-{home_losses}", "Home", "val-neg" if home_losses > home_wins else "val-pos"),
-    (f"{away_wins}-{away_losses}", "Away", "val-pos" if away_wins > away_losses else "val-neg"),
-    (f"{goals_for}-{goals_against}", "GF-GA", "val-pos" if goals_for > goals_against else "val-neg"),
-    (f"{avg_gf:.1f}-{avg_ga:.1f}", "Avg GF-GA", ""),
-]
-cols = st.columns(len(kpi_data))
-for col, (val, label, cls) in zip(cols, kpi_data):
-    col.markdown(metric_card(val, label, cls), unsafe_allow_html=True)
+st.markdown(section_header("Season Stats"), unsafe_allow_html=True)
+cols = st.columns(4)
+cols[0].metric("Overall Record", f"{wins}-{losses}")
+cols[1].metric("Win Percentage", f"{win_pct:.1%}")
+cols[2].metric("ACC Record", f"{conf_wins}-{conf_losses}")
+cols[3].metric("Current Streak", f"{streak_type}{streak_count}")
+
+cols = st.columns(4)
+cols[0].metric("Home Record", f"{home_wins}-{home_losses}")
+cols[1].metric("Away Record", f"{away_wins}-{away_losses}")
+cols[2].metric("Goals For-Against", f"{goals_for}-{goals_against}")
+cols[3].metric("Avg GF-GA", f"{avg_gf:.1f}-{avg_ga:.1f}")
 
 # advanced metrics
 
-st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.6rem;letter-spacing:1px;color:{UVA_ORANGE};margin:1.2rem 0 0.5rem 0;">Virginia ({wins} – {losses})</p>', unsafe_allow_html=True)
+st.markdown(section_header("National Rankings"), unsafe_allow_html=True)
 
 adv_metrics_row1 = [
     ("Offensive Efficiency", "offensive_efficiency"),
@@ -339,71 +257,13 @@ for row_metrics in [adv_metrics_row1, adv_metrics_row2]:
     cols = st.columns(4)
     for col, (label, key) in zip(cols, row_metrics):
         val, rank = NATIONAL_RANKS[key]
-        col.markdown(f"""<div class="adv-card">
-<div class="amc-label">{label}</div>
-<span class="amc-rank">{rank}</span>
-<span class="amc-value">{val}</span>
-</div>""", unsafe_allow_html=True)
+        col.metric(label, val, delta=rank)
 
-# rankings table
-
-st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;letter-spacing:1px;color:{UVA_BLUE};margin:1.5rem 0 0.3rem 0;">Team Rankings</p>', unsafe_allow_html=True)
-
-
-# build ranking rows
-def render_rank_rows(items):
-    html = ""
-    for label, value, rank in items:
-        html += f'<div class="rank-row"><span class="rl">{label}</span><span><span class="rv">{value}</span><span class="rr">{rank}</span></span></div>'
-    return html
-
-
-# team section
-st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_BLUE};text-align:center;margin:8px 0 4px 0;">Team</p>', unsafe_allow_html=True)
-tc1, tc2 = st.columns(2)
-tc1.markdown(render_rank_rows([("Winning Percentage", f"{adv.get('win_pct', 46.2)}%", "77th")]), unsafe_allow_html=True)
-tc2.markdown(render_rank_rows([("Scoring Margin", f"{adv.get('scoring_margin', 0.2)}", "71st")]), unsafe_allow_html=True)
-
-# offense and defense
-off_col, def_col = st.columns(2)
-
-with off_col:
-    st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_ORANGE};text-align:center;margin:12px 0 4px 0;">Offense</p>', unsafe_allow_html=True)
-    st.markdown(render_rank_rows([
-        ("Scoring Offense",  str(adv.get("scoring_offense", 10.6)),  "64th"),
-        ("Man-Up Offense",   "35.0%",                                "79th"),
-        ("Points / Game",    str(adv.get("points_per_game", 15.0)),  "64th"),
-        ("Assists / Game",   str(adv.get("assists_per_game", 4.4)),  "62nd"),
-        ("Turnovers / Game", str(adv.get("turnovers_per_game", 12.5)), "96th"),
-        ("Shots / Game",     str(adv.get("shots_per_game", 23.7)),   "55th"),
-        ("SOG / Game",       str(adv.get("sog_per_game", 16.2)),     "48th"),
-    ]), unsafe_allow_html=True)
-
-with def_col:
-    st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_ORANGE};text-align:center;margin:12px 0 4px 0;">Defense</p>', unsafe_allow_html=True)
-    st.markdown(render_rank_rows([
-        ("Scoring Defense",   str(adv.get("scoring_defense", 10.4)),     "73rd"),
-        ("Man-Down Defense",  "45.8%",                                    "104th"),
-        ("Caused TO / Game",  str(adv.get("caused_to_per_game", 7.2)),   "62nd"),
-        ("Saves / Game",      str(adv.get("saves_per_game", 6.5)),       "117th"),
-        ("Shots / Game",      str(adv.get("opp_shots_per_game", 23.1)),  "50th"),
-        ("SOG / Game",        str(adv.get("opp_sog_per_game", 18.2)),    "48th"),
-    ]), unsafe_allow_html=True)
-
-# possession game
-st.markdown(f'<p style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:1px;color:{UVA_ORANGE};text-align:center;margin:12px 0 4px 0;">Possession Game</p>', unsafe_allow_html=True)
-pc1, pc2, pc3, pc4 = st.columns(4)
-pc1.markdown(render_rank_rows([("DC Win Rate", f"{adv.get('dc_win_rate', 57.7)}%", "34th")]), unsafe_allow_html=True)
-pc2.markdown(render_rank_rows([("GBs / Game", str(adv.get("gbs_per_game", 12.2)), "75th")]), unsafe_allow_html=True)
-pc3.markdown(render_rank_rows([("Clear Rate", f"{adv.get('clear_rate', 94.5)}%", "3rd")]), unsafe_allow_html=True)
-pc4.markdown(render_rank_rows([("Ride Rate", f"{adv.get('ride_rate', 13.0)}%", "78th")]), unsafe_allow_html=True)
-
-st.markdown('<p style="text-align:center;font-size:0.75rem;color:#999;margin-top:6px;font-style:italic;">If there are terms or concepts that are unfamiliar, a fuller explanation may be available in the glossary.</p>', unsafe_allow_html=True)
 
 
 # full schedule and results
 
-st.markdown('<div class="section-label">Full Schedule & Results</div>', unsafe_allow_html=True)
+st.markdown(section_header("Full Schedule & Results"), unsafe_allow_html=True)
 
 for game in SEASON_SCHEDULE:
     opp = game["opponent"]
@@ -497,14 +357,13 @@ for game in SEASON_SCHEDULE:
 
 next_game = next((g for g in SEASON_SCHEDULE if g["result"] is None and g["note"] not in ("Exhibition", "TBA")), None)
 if next_game:
-    st.markdown(f"""<div style="background:linear-gradient(135deg, {UVA_BLUE}, #1a2238);
-        border-radius:12px;padding:1.2rem 2rem;color:white;text-align:center;">
-        <div style="font-size:0.75rem;opacity:0.6;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Next Game</div>
-        <div style="font-size:1.8rem;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;margin:6px 0;">
-            {next_game['ha']} {next_game['rank']} {next_game['opponent']}</div>
-        <div style="font-size:0.85rem;opacity:0.7;">
-            {next_game['day']} {next_game['date']} · {next_game['location']} · {next_game['note']}</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(section_header("Next Game"), unsafe_allow_html=True)
+    st.write(f"{next_game['ha']} {next_game['rank']} {next_game['opponent']}")
+    st.caption(f"{next_game['day']} {next_game['date']} · {next_game['location']} · {next_game['note']}")
 
 st.markdown("---")
-st.markdown(f'<div style="text-align:center;font-size:0.75rem;color:#999;padding:8px;">LaxIQ · UVA Women\'s Lacrosse Analytics · Built by Faizan Khan</div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div style="text-align:center;padding:12px;color:#999;font-size:0.78rem;">'
+    f'LaxIQ · UVA Women\'s Lacrosse Analytics · Built by Faizan Khan</div>',
+    unsafe_allow_html=True,
+)

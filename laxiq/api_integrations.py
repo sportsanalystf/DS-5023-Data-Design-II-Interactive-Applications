@@ -301,24 +301,12 @@ def render_weather_card(weather_data: dict):
     if date_str:
         label += f" ({date_str})"
 
-    from style import UVA_BLUE, UVA_ORANGE, BORDER, TEXT_MUTED
-    st.markdown(f"""<div style="background:white;border:1px solid {BORDER};border-radius:12px;
-        padding:16px 20px;margin-bottom:12px;">
-        <div style="font-size:0.7rem;color:{TEXT_MUTED};text-transform:uppercase;letter-spacing:1px;
-            font-weight:600;margin-bottom:8px;">{label}</div>
-        <div style="display:flex;align-items:center;gap:16px;">
-            <div style="font-size:2.5rem;">{emoji}</div>
-            <div>
-                <div style="font-size:1.4rem;font-weight:700;color:{UVA_BLUE};">
-                    {f'{temp:.0f}°F' if temp is not None else 'N/A'}</div>
-                <div style="font-size:0.8rem;color:{TEXT_MUTED};">{condition}</div>
-            </div>
-            <div style="margin-left:auto;text-align:right;">
-                <div style="font-size:0.8rem;color:{UVA_BLUE};"><b>Wind:</b> {f'{wind:.0f} mph' if wind is not None else 'N/A'}</div>
-                <div style="font-size:0.8rem;color:{UVA_BLUE};"><b>Humidity:</b> {f'{humidity:.0f}%' if humidity is not None else 'N/A'}</div>
-            </div>
-        </div>
-    </div>""", unsafe_allow_html=True)
+    st.write(f"**{label}**")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Temperature", f"{temp:.0f}°F" if temp is not None else "N/A")
+    col2.metric("Wind", f"{wind:.0f} mph" if wind is not None else "N/A")
+    col3.metric("Humidity", f"{humidity:.0f}%" if humidity is not None else "N/A")
+    st.caption(f"{emoji} {condition}")
 
 
 def render_team_info_card(team_data: dict):
@@ -332,20 +320,16 @@ def render_team_info_card(team_data: dict):
         st.info("No team info returned.")
         return
 
-    from style import UVA_BLUE, BORDER, TEXT_MUTED
-
     desc = d.get("description", "")
     # truncate long descriptions
     if desc and len(desc) > 300:
         desc = desc[:300] + "…"
 
-    st.markdown(f"""<div style="background:white;border:1px solid {BORDER};border-radius:12px;
-        padding:16px 20px;margin-bottom:12px;">
-        <div style="font-size:0.7rem;color:{TEXT_MUTED};text-transform:uppercase;letter-spacing:1px;
-            font-weight:600;margin-bottom:8px;">Team Profile — {d.get('name', '')}</div>
-        <div style="font-size:0.8rem;color:{UVA_BLUE};line-height:1.5;">
-            <b>Sport:</b> {d.get('sport', 'N/A')} · <b>League:</b> {d.get('league', 'N/A')}<br>
-            <b>Stadium:</b> {d.get('stadium', 'N/A')} · <b>Founded:</b> {d.get('year_formed', 'N/A')}<br>
-        </div>
-        {f'<div style="font-size:0.78rem;color:{TEXT_MUTED};margin-top:8px;line-height:1.5;">{desc}</div>' if desc else ''}
-    </div>""", unsafe_allow_html=True)
+    st.write(f"**Team Profile — {d.get('name', '')}**")
+    col1, col2 = st.columns(2)
+    col1.write(f"**Sport:** {d.get('sport', 'N/A')}")
+    col1.write(f"**Stadium:** {d.get('stadium', 'N/A')}")
+    col2.write(f"**League:** {d.get('league', 'N/A')}")
+    col2.write(f"**Founded:** {d.get('year_formed', 'N/A')}")
+    if desc:
+        st.caption(desc)

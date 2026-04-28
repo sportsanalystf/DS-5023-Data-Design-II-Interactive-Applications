@@ -13,7 +13,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
         if len(all_games) < 2:
             st.info("Need at least 2 games for comparison.")
         else:
-            st.markdown('<h4 style="color:#232D4B;">Game Comparison</h4>', unsafe_allow_html=True)
+            st.subheader("Game Comparison")
             # lets you compare any two games side by side
             st.caption("Compare Virginia's performance across two games side-by-side.")
 
@@ -51,14 +51,9 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     h_sc = int(info_row.get("home_score", 0))
                     a_sc = int(info_row.get("away_score", 0))
                     with col:
-                        st.markdown(f"""<div style="background:white;border-radius:10px;padding:14px 18px;
-                            color:{UVA_BLUE};text-align:center;margin-bottom:8px;border:1px solid {BORDER};
-                            box-shadow:0 2px 8px rgba(35,45,75,0.06);">
-                            <span style="background:{badge_bg};color:white;padding:2px 10px;border-radius:12px;
-                                font-size:0.65rem;font-weight:700;letter-spacing:1px;">{badge}</span>
-                            <div style="font-size:1.4rem;font-weight:700;margin-top:6px;">Virginia {h_sc} — {a_sc} {opp_name}</div>
-                            <div style="font-size:0.7rem;color:#999;">{info_row.get('date', '')} · {info_row.get('location', '')}</div>
-                        </div>""", unsafe_allow_html=True)
+                        st.write(f"**Virginia {h_sc} — {a_sc} {opp_name}**")
+                        st.caption(f"{info_row.get('date', '')} · {info_row.get('location', '')}")
+                        st.metric("Result", badge)
 
                 # statistical comparison bar chart — consistent metrics
                 # define ordered metric columns matching team stats
@@ -100,7 +95,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     ))
                     fig_cmp.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                        font=dict(family="DM Sans, sans-serif", color=UVA_BLUE, size=12),
+                        font=dict(color=UVA_BLUE, size=12),
                         margin=dict(l=40, r=20, t=50, b=50), height=400, barmode="group",
                         title=dict(text="UVA Stat Comparison", font=dict(size=14, color=UVA_BLUE)),
                         xaxis=dict(gridcolor="#ECECEC", zerolinecolor=BORDER, linecolor=BORDER,
@@ -113,7 +108,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                     st.plotly_chart(fig_cmp, use_container_width=True)
 
                     # delta cards — show first row of key stats
-                    st.markdown('<h4 style="color:#232D4B;">Stat Deltas</h4>', unsafe_allow_html=True)
+                    st.subheader("Stat Deltas")
                     n_cards = min(len(chart_cats), 6)
                     delta_cols = st.columns(n_cards)
                     for idx in range(n_cards):
@@ -123,24 +118,17 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                         color = POSITIVE if (delta < 0 if is_inverse else delta > 0) else (NEGATIVE if delta != 0 else "#999")
                         arrow = "+" if delta > 0 else ""
                         with delta_cols[idx]:
-                            st.markdown(f"""<div style="text-align:center;background:white;border:1px solid #DADADA;
-                                border-radius:10px;padding:10px 6px;">
-                                <div style="font-size:0.65rem;color:#999;font-weight:600;text-transform:uppercase;
-                                    letter-spacing:0.5px;">{chart_cats[idx]}</div>
-                                <div style="font-size:1.2rem;font-weight:700;color:{UVA_BLUE};">
-                                    {vals_a[idx]} vs {vals_b[idx]}</div>
-                                <div style="font-size:0.85rem;font-weight:700;color:{color};">{arrow}{delta}</div>
-                            </div>""", unsafe_allow_html=True)
+                            st.metric(chart_cats[idx], f"{vals_a[idx]} vs {vals_b[idx]}", delta=f"{arrow}{delta}")
 
                 # full comparison table
-                st.markdown('<h4 style="color:#232D4B;">Full Comparison Data</h4>', unsafe_allow_html=True)
+                st.subheader("Full Comparison Data")
                 # clean NaN values for display
                 display_cmp = comparison.fillna(0)
                 st.dataframe(display_cmp, use_container_width=True, hide_index=True)
 
                 # quarter by quarter analysis
                 st.markdown("---")
-                st.markdown('<h4 style="color:#232D4B;">Quarter by Quarter Analysis</h4>', unsafe_allow_html=True)
+                st.subheader("Quarter by Quarter Analysis")
                 st.caption("Compare UVA's performance by quarter across the two selected games.")
 
                 # pull Team_Stats_QoQ for each game
@@ -202,7 +190,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                 ))
                 fig_score_q.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                    font=dict(family="DM Sans, sans-serif", color=UVA_BLUE, size=12),
+                    font=dict(color=UVA_BLUE, size=12),
                     margin=dict(l=40, r=20, t=50, b=40), height=320, barmode="group",
                     title=dict(text="Goals by Quarter", font=dict(size=14, color=UVA_BLUE)),
                     xaxis=dict(gridcolor="#ECECEC"), yaxis=dict(gridcolor="#ECECEC"),
@@ -230,7 +218,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                         ))
                         fig_cat.update_layout(
                             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                            font=dict(family="DM Sans, sans-serif", color=UVA_BLUE, size=11),
+                            font=dict(color=UVA_BLUE, size=11),
                             margin=dict(l=30, r=10, t=40, b=30), height=260, barmode="group",
                             title=dict(text=cat, font=dict(size=13, color=UVA_BLUE)),
                             xaxis=dict(gridcolor="#ECECEC"), yaxis=dict(gridcolor="#ECECEC"),
@@ -240,7 +228,7 @@ def render(sheets, game, info, home_team, opp, hs, aws):
                             st.plotly_chart(fig_cat, use_container_width=True)
 
                 # quarter summary table
-                st.markdown('<h4 style="color:#232D4B;">Quarter Summary Table</h4>', unsafe_allow_html=True)
+                st.subheader("Quarter Summary Table")
                 q_table_data = []
                 for q_idx, q in enumerate(quarters):
                     row_data = {"Quarter": q}

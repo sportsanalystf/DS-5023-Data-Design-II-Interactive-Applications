@@ -1,11 +1,8 @@
 # player intelligence dashboard
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
-import math
 
 # page config
 st.set_page_config(
@@ -15,16 +12,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# import colors from style module
+# import colors and CSS from style module
 from style import (UVA_BLUE, UVA_ORANGE, UVA_BLUE_25, UVA_ORANGE_25,
                    CYAN as UVA_CYAN, YELLOW as UVA_YELLOW, TEAL as UVA_TEAL,
                    GREEN as UVA_GREEN, MAGENTA as UVA_MAGENTA,
                    LIGHT_BG as LIGHT_GRAY, BORDER as MED_GRAY, TEXT_MUTED as TEXT_GRAY,
-                   WHITE, PLOT_LAYOUT)
+                   WHITE, PLOT_LAYOUT, CSS, section_header)
 
 # import tab modules
 from tabs.player_intelligence import (
-    team_overview, player_cards, player_comparison, draw_control, goal_tending
+    team_overview, player_cards, player_comparison
 )
 from tabs.player_intelligence.metrics import (
     compute_advanced_metrics, compute_impact_scores, get_development_flags, get_tier,
@@ -39,248 +36,18 @@ TIER_COLORS = {1: CAV_ORANGE, 2: UVA_CYAN, 3: UVA_GREEN, 4: MED_GRAY}
 # flag colors
 FLAG_COLORS = {"positive": UVA_GREEN, "negative": UVA_MAGENTA, "warning": UVA_YELLOW, "info": UVA_CYAN}
 
-# custom styles
-st.markdown(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Bebas+Neue&display=swap');
-
-:root {{
-    --uva-blue: {UVA_BLUE};
-    --uva-orange: {UVA_ORANGE};
-    --cav-orange: {CAV_ORANGE};
-}}
-
-.stApp {{
-    background-color: {LIGHT_GRAY};
-    font-family: 'DM Sans', sans-serif;
-    color: {UVA_BLUE};
-}}
-
-h1, h2, h3 {{
-    font-family: 'Bebas Neue', sans-serif !important;
-    letter-spacing: 1.5px;
-    color: {UVA_BLUE} !important;
-}}
-
-section[data-testid="stSidebar"] {{
-    background: #FFFFFF !important;
-    border-right: 1px solid #DADADA;
-}}
-section[data-testid="stSidebar"] * {{
-    color: {UVA_BLUE} !important;
-}}
-section[data-testid="stSidebar"] .stMarkdown p,
-section[data-testid="stSidebar"] .stMarkdown li,
-section[data-testid="stSidebar"] .stMarkdown h3,
-section[data-testid="stSidebar"] .stMarkdown h4 {{
-    color: {UVA_BLUE} !important;
-}}
-/* hide auto navigation */
-section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {{ display: none !important; }}
-section[data-testid="stSidebar"] nav {{ display: none !important; }}
-section[data-testid="stSidebar"] ul[data-testid="stSidebarNavItems"] {{ display: none !important; }}
-
-.main-header {{
-    background: linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 50%, {UVA_ORANGE} 100%);
-    padding: 1.5rem 2.5rem;
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}}
-.main-header h1 {{
-    color: white !important;
-    font-size: 2.5rem;
-    margin: 0;
-    font-family: 'Bebas Neue', sans-serif !important;
-    line-height: 1;
-}}
-.main-header p {{
-    color: rgba(255,255,255,0.75);
-    font-size: 0.95rem;
-    margin: 0.25rem 0 0 0;
-}}
-
-.player-card {{
-    background: {WHITE};
-    border: 1px solid {MED_GRAY};
-    border-radius: 16px;
-    padding: 1.5rem 1.8rem;
-    margin-bottom: 1.2rem;
-    box-shadow: 0 2px 12px rgba(35,45,75,0.06);
-    transition: all 0.25s ease;
-    border-left: 5px solid {UVA_ORANGE};
-}}
-.player-card:hover {{
-    box-shadow: 0 4px 24px rgba(35,45,75,0.12);
-    border-left-color: {CAV_ORANGE};
-}}
-
-.player-name {{
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    color: {UVA_BLUE};
-    letter-spacing: 2px;
-    margin: 0;
-    line-height: 1.1;
-}}
-.player-meta {{
-    color: {UVA_ORANGE};
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 3px;
-}}
-
-.impact-score-box {{
-    background: linear-gradient(135deg, {UVA_ORANGE} 0%, {CAV_ORANGE} 100%);
-    border-radius: 14px;
-    padding: 1rem 0.8rem;
-    text-align: center;
-    min-width: 90px;
-}}
-.impact-score-num {{
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.8rem;
-    color: white;
-    line-height: 1;
-}}
-.impact-score-label {{
-    color: rgba(255,255,255,0.9);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 700;
-}}
-
-.stat-box {{
-    background: {WHITE};
-    border: 1px solid {MED_GRAY};
-    border-radius: 12px;
-    padding: 0.8rem;
-    text-align: center;
-}}
-.stat-val {{
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    line-height: 1;
-}}
-.stat-label {{
-    font-size: 0.65rem;
-    color: {TEXT_GRAY};
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 600;
-    margin-top: 4px;
-}}
-
-.tier-badge {{
-    display: inline-block;
-    padding: 3px 14px;
-    border-radius: 50px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: white;
-    vertical-align: middle;
-    margin-left: 8px;
-}}
-.tier-1 {{ background: {CAV_ORANGE}; }}
-.tier-2 {{ background: {UVA_CYAN}; }}
-.tier-3 {{ background: {UVA_GREEN}; }}
-.tier-4 {{ background: {MED_GRAY}; color: {UVA_BLUE}; }}
-
-.flag-tag {{
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 50px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    margin: 3px 4px;
-    letter-spacing: 0.5px;
-}}
-.flag-positive {{ background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }}
-.flag-negative {{ background: #FCE4EC; color: #C62828; border: 1px solid #EF9A9A; }}
-.flag-warning {{ background: #FFF8E1; color: #E65100; border: 1px solid #FFE082; }}
-.flag-info {{ background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }}
-
-.coaching-notes {{
-    background: #F8F8FC;
-    border-left: 4px solid {UVA_BLUE};
-    border-radius: 0 10px 10px 0;
-    padding: 1rem 1.2rem;
-    font-size: 0.88rem;
-    color: {UVA_BLUE};
-    line-height: 1.65;
-    margin-top: 0.8rem;
-}}
-
-.rec-box {{
-    background: linear-gradient(135deg, #FFF3E0 0%, #FFF8E1 100%);
-    border-left: 4px solid {UVA_ORANGE};
-    border-radius: 0 10px 10px 0;
-    padding: 1rem 1.2rem;
-    font-size: 0.88rem;
-    color: {UVA_BLUE};
-    line-height: 1.65;
-    margin-top: 0.5rem;
-}}
-.rec-box strong {{ color: {CAV_ORANGE}; }}
-
-.section-divider {{
-    border: none;
-    border-top: 1px solid {MED_GRAY};
-    margin: 1rem 0;
-}}
-
-.headshot-circle {{
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid {UVA_ORANGE};
-    background: {LIGHT_GRAY};
-}}
-
-div[data-testid="stMetric"] {{
-    background: {WHITE};
-    border: 1px solid {MED_GRAY};
-    border-radius: 10px;
-    padding: 0.6rem;
-}}
-div[data-testid="stMetric"] label {{
-    color: {TEXT_GRAY} !important;
-}}
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] {{
-    color: {UVA_BLUE} !important;
-}}
-
-.stDataFrame {{ border-radius: 10px; overflow: hidden; }}
-</style>
-""", unsafe_allow_html=True)
+# apply minimal CSS (just hides auto-nav)
+st.markdown(CSS, unsafe_allow_html=True)
 
 # sidebar setup
 with st.sidebar:
-    import os as _os, base64 as _b64mod
+    import os as _os
     _logo_path = _os.path.join(_os.path.dirname(__file__), "..", "assets", "va_logo.png")
     if _os.path.exists(_logo_path):
-        with open(_logo_path, "rb") as _f:
-            _b64 = _b64mod.b64encode(_f.read()).decode()
-        st.markdown(f"""<a href="https://virginiasports.com" target="_blank" style="display:block;text-align:center;margin-bottom:8px;">
-            <img src="data:image/png;base64,{_b64}" style="max-width:180px;margin:0 auto;" />
-        </a>""", unsafe_allow_html=True)
+        st.image(_logo_path, width=180)
     else:
-        st.markdown("""<a href="https://virginiasports.com" target="_blank" style="text-decoration:none;">
-            <div style="background:linear-gradient(135deg, #E57200 0%, #c75b00 100%);
-                border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:8px;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;
-                    color:white;line-height:1.1;">VIRGINIA ATHLETICS</div>
-            </div>
-        </a>""", unsafe_allow_html=True)
-    st.markdown(f'<h2 style="margin:0;letter-spacing:1px;font-family:Bebas Neue,sans-serif;color:{UVA_BLUE} !important;">⚔️ LaxIQ</h2>', unsafe_allow_html=True)
+        st.write("Virginia Athletics")
+    st.title("⚔️ LaxIQ")
     st.caption("Cavaliers Analytics Application")
     st.divider()
     st.page_link("Home.py", label="🏠 Season Overview")
@@ -510,14 +277,13 @@ except Exception:
     _n_games = len(games)
     _record_str = f"{sum(1 for r in game_results if r=='W')}-{sum(1 for r in game_results if r!='W')}"
 
-st.markdown(f"""
-<div class="main-header">
-    <div>
-        <h1>LaxIQ — PLAYER INTELLIGENCE</h1>
-        <p>Women's Lacrosse · 2026 Season ({_n_games} Games) · Record: {_record_str} · Advanced Player Analytics Dashboard</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    f'<div style="background:{UVA_BLUE};padding:24px 28px;border-radius:10px;margin-bottom:20px;">'
+    f'<h1 style="color:white;margin:0;font-size:2rem;">⚔️ LaxIQ — Player Intelligence</h1>'
+    f'<p style="color:{UVA_ORANGE};margin:6px 0 0 0;font-size:0.95rem;">'
+    f'Women\'s Lacrosse · 2026 Season ({_n_games} Games) · Record: {_record_str}</p></div>',
+    unsafe_allow_html=True,
+)
 
 # reset filters callback
 def _reset_filters():
@@ -559,7 +325,7 @@ if not filtered and (pos_filter and tier_filter):
     st.warning(f"⚠️ No players found. Try lowering minimum games played.")
 
 # tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Team Overview", "Player Cards", "Player Comparison", "Draw Control Center", "Goal Tending"])
+tab1, tab2, tab3 = st.tabs(["Team Overview", "Player Cards", "Player Comparison"])
 
 # Render each tab module
 with tab1:
@@ -570,9 +336,3 @@ with tab2:
 
 with tab3:
     player_comparison.render(sorted_players, all_data)
-
-with tab4:
-    draw_control.render(all_data)
-
-with tab5:
-    goal_tending.render(all_data)

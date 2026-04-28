@@ -21,7 +21,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result):
                 col_pos, col_neg = st.columns(2)
 
                 with col_pos:
-                    st.markdown('<h4 style="color:#232D4B;">Biggest Positive Swings</h4>', unsafe_allow_html=True)
+                    st.subheader("Biggest Positive Swings")
                     for _, row in wpa_df.nlargest(3, "WPA").iterrows():
                         is_uva = "virginia" in str(row["Team"]).lower()
                         team_lbl = "UVA" if is_uva else opp
@@ -33,7 +33,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result):
                                     unsafe_allow_html=True)
 
                 with col_neg:
-                    st.markdown('<h4 style="color:#232D4B;">Biggest Negative Swings</h4>', unsafe_allow_html=True)
+                    st.subheader("Biggest Negative Swings")
                     for _, row in wpa_df.nsmallest(3, "WPA").iterrows():
                         is_uva = "virginia" in str(row["Team"]).lower()
                         team_lbl = "UVA" if is_uva else opp
@@ -47,7 +47,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result):
                 # scoring runs
                 runs = detect_scoring_runs(scoring_summary, min_run=3)
                 if runs:
-                    st.markdown('<h4 style="color:#232D4B;">Scoring Runs (3+ consecutive)</h4>', unsafe_allow_html=True)
+                    st.subheader("Scoring Runs (3+ consecutive)")
                     for run in runs:
                         is_uva = "Virginia" in run["team"]
                         variant = "pos" if is_uva else "neg"
@@ -57,7 +57,7 @@ def render(sheets, game, info, home_team, opp, hs, aws, result):
 
                 # film tags for the coaching staff
                 st.markdown("---")
-                st.markdown('<h4 style="color:#232D4B;">Film Tags</h4>', unsafe_allow_html=True)
+                st.subheader("Film Tags")
                 st.caption("Suggested film sequences for coaching staff review.")
 
                 ftcol1, ftcol2 = st.columns(2)

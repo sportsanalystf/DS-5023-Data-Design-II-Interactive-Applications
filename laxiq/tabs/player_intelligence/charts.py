@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
 from style import (UVA_BLUE, UVA_ORANGE, UVA_BLUE_25, UVA_ORANGE_25,
                    CYAN as UVA_CYAN, YELLOW as UVA_YELLOW, TEAL as UVA_TEAL,
                    GREEN as UVA_GREEN, MAGENTA as UVA_MAGENTA,
@@ -16,7 +15,7 @@ from style import (UVA_BLUE, UVA_ORANGE, UVA_BLUE_25, UVA_ORANGE_25,
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor=WHITE,
-    font=dict(family="DM Sans", color=UVA_BLUE),
+    font=dict(color=UVA_BLUE),
     margin=dict(l=30, r=30, t=40, b=30),
 )
 
@@ -54,7 +53,9 @@ def make_radar_chart(scores, pos, height=300):
         marker=dict(size=6, color=UVA_ORANGE)
     ))
     fig.update_layout(
-        **PLOTLY_LAYOUT,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=WHITE,
+        font=dict(color=UVA_BLUE),
+        margin=dict(l=10, r=10, t=20, b=20),
         polar=dict(
             bgcolor="rgba(0,0,0,0)",
             radialaxis=dict(visible=True, range=[0, 100], showticklabels=False,
@@ -122,7 +123,7 @@ def make_percentile_bars(scores, pos):
         showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Bar(y=cats, x=vals, orientation="h", marker_color=colors,
         text=[f"{v:.0f}" for v in vals], textposition="inside",
-        textfont=dict(size=12, color=WHITE, family="DM Sans"), showlegend=False))
+        textfont=dict(size=12, color=WHITE), showlegend=False))
     fig.update_layout(**PLOTLY_LAYOUT, height=200, barmode="overlay",
         xaxis=dict(range=[0, 100], visible=False),
         yaxis=dict(tickfont=dict(size=11, color=TEXT_GRAY), autorange="reversed"))
@@ -189,22 +190,7 @@ def make_usage_efficiency_chart(all_data):
         color="pos", text="name", color_discrete_map=color_map,
         labels={"shots_per_game": "Shots / Game (Usage)", "shooting_pct": "Shooting % (Efficiency)", "pos": "Position"})
     fig.update_traces(textposition="top center", textfont_size=10)
-
-    med_x = df["shots_per_game"].median()
-    med_y = df["shooting_pct"].median()
-    fig.add_hline(y=med_y, line_dash="dash", line_color=MED_GRAY, line_width=1)
-    fig.add_vline(x=med_x, line_dash="dash", line_color=MED_GRAY, line_width=1)
-    fig.add_annotation(x=df["shots_per_game"].max()*0.95, y=df["shooting_pct"].max()*0.95,
-        text="Stars", showarrow=False, font=dict(size=11, color=UVA_GREEN))
-    fig.add_annotation(x=df["shots_per_game"].min()*1.1, y=df["shooting_pct"].max()*0.95,
-        text="Efficient", showarrow=False, font=dict(size=11, color=UVA_CYAN))
-    fig.add_annotation(x=df["shots_per_game"].max()*0.95, y=max(0, med_y * 0.3),
-        text="Volume", showarrow=False, font=dict(size=11, color=UVA_ORANGE))
-    fig.add_annotation(x=df["shots_per_game"].min()*1.1, y=max(0, med_y * 0.3),
-        text="Low Impact", showarrow=False, font=dict(size=11, color=TEXT_GRAY))
-
-    fig.update_layout(**PLOTLY_LAYOUT, height=450,
-        xaxis=dict(gridcolor=MED_GRAY), yaxis=dict(gridcolor=MED_GRAY))
+    fig.update_layout(**PLOTLY_LAYOUT, height=450)
     return fig
 
 

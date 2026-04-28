@@ -107,12 +107,8 @@ def render(all_data):
     with dc_sub2:
         uva_df = pd.DataFrame(UVA_DRAW_CLIPS)
 
-        st.markdown(f"""<div style="background:linear-gradient(135deg, {UVA_BLUE} 0%, #1a2238 60%, {UVA_ORANGE} 100%);
-            padding:1.2rem 2rem;border-radius:14px;margin-bottom:1.2rem;">
-            <h2 style="color:white !important;margin:0;font-size:1.8rem;">UVA Draw Control Scouting Report</h2>
-            <p style="color:rgba(255,255,255,0.7);margin:4px 0 0 0;font-size:0.85rem;">
-            32 Draw Controls Analyzed · Multi-Game Film Study · Internal Scouting</p>
-        </div>""", unsafe_allow_html=True)
+        st.subheader("UVA Draw Control Scouting Report")
+        st.caption("32 Draw Controls Analyzed · Multi-Game Film Study · Internal Scouting")
 
         # KPI row
         uva_wins = len(uva_df[uva_df["out"] == "Win"])
@@ -272,7 +268,7 @@ def render(all_data):
                     radialaxis=dict(visible=True, gridcolor=MED_GRAY, tickfont=dict(size=9)),
                     angularaxis=dict(tickfont=dict(size=11, color=UVA_BLUE))
                 ),
-                font=dict(family="DM Sans"), height=380, showlegend=True,
+                height=380, showlegend=True,
                 legend=dict(orientation="h", yanchor="bottom", y=1.02),
                 paper_bgcolor=WHITE, plot_bgcolor=WHITE,
                 margin=dict(t=60, b=40)
@@ -361,7 +357,7 @@ def render(all_data):
                 textinfo="label+percent", textfont=dict(size=11),
                 hole=0.4
             ))
-            fig_poss.update_layout(height=300, font=dict(family="DM Sans"),
+            fig_poss.update_layout(height=300, font=dict(),
                 paper_bgcolor=WHITE, plot_bgcolor=WHITE,
                 title=dict(text="Possession Type Distribution", font=dict(size=14, color=UVA_BLUE)),
                 showlegend=False, margin=dict(t=60, b=20))

@@ -218,7 +218,7 @@ def get_model():
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(data_context=data_ctx)
 
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=system_prompt,
         )
         st.session_state["gemini_model"] = model

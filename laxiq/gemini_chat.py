@@ -218,7 +218,7 @@ def get_model():
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(data_context=data_ctx)
 
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.0-flash",
             system_instruction=system_prompt,
         )
         st.session_state["gemini_model"] = model
@@ -262,7 +262,7 @@ def send_message(user_input: str) -> str:
 
     except Exception as e:
         error_str = str(e).lower()
-        if "429" in error_str or "rate" in error_str or "quota" in error_str:
+        if "429" in error_str or "rate limit" in error_str or "quota" in error_str or "resource exhausted" in error_str:
             return "⚠️ Rate limit reached — the Gemini API is temporarily throttled. Please wait a moment and try again."
         elif "timeout" in error_str or "deadline" in error_str:
             return "⚠️ The request timed out. The API might be slow right now — please try again."
@@ -271,7 +271,7 @@ def send_message(user_input: str) -> str:
         elif "api key" in error_str or "401" in error_str or "403" in error_str:
             return "⚠️ API authentication failed. Please check your GEMINI_API_KEY in `.streamlit/secrets.toml`."
         else:
-            return f"⚠️ An unexpected error occurred: {type(e).__name__}. Please try again."
+            return f"⚠️ An unexpected error occurred: {type(e).__name__} — {e}"
 
 
 def clear_chat():
